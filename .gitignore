@@ -1,0 +1,4 @@
+#Ignorar archivos en carpeta build
+[Bb]uild/
+NODE FW.X/CWSN LSI Node/__Previews/
+NODE FW.X/dist/
