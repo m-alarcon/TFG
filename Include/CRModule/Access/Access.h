@@ -73,7 +73,7 @@ typedef union _PERMACT
         WORD ResetMCU:1;
         WORD ChanHop:1;
         WORD AdjTrnscTxPowr:1;
-        WORD ResetTrnsc:1;
+        WORD TurnOnTrnsc:1;//ResetTrnsc:1;
         WORD PutTrnsc2Sleep:1;
         WORD WakeTrnsc:1;
         WORD TurnOffTrnsc:1;

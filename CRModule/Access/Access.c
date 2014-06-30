@@ -118,8 +118,8 @@ BOOL CRM_AccCtrl_ChckPerm(ACCCTRL_MSSG_RCVD *Peticion)
                             case ActTxPwr:
                                 return TABLA_PERM_ACC[i].Registro_Permisos.ExecPerm.ExecActionPerm.AdjTrnscTxPowr;
                                 break;
-                            case ActReset:
-                                return TABLA_PERM_ACC[i].Registro_Permisos.ExecPerm.ExecActionPerm.ResetTrnsc;
+                            case ActTurnOn://ActReset:
+                                return TABLA_PERM_ACC[i].Registro_Permisos.ExecPerm.ExecActionPerm.TurnOnTrnsc;//ResetTrnsc;
                                 break;
                             case ActSleep:
                                 return TABLA_PERM_ACC[i].Registro_Permisos.ExecPerm.ExecActionPerm.PutTrnsc2Sleep;

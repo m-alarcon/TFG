@@ -73,7 +73,7 @@ BOOL CRM_Exec_Mssg_Rcvd(EXEC_MSSG_RCVD *Peticion)
 BOOL CRM_Exec_SleepMCU(EXEC_MSSG_RCVD *Peticion)
 {
     //TODO dormir MCU. HAL?
-    if (!SleepNode(Peticion->Transceiver,Peticion->Param2)) {
+    if (!SleepNode(Peticion->Transceiver,(UINT32)(Peticion->Param2))) {
         return TRUE;
     } else {
         return FALSE;
@@ -138,6 +138,15 @@ BOOL CRM_Exec_TurnOff(EXEC_MSSG_RCVD *Peticion)
 {
     //TODO apagar transceptor. HAL
     if (!SwitchOffRI(Peticion->Transceiver)) {
+        return TRUE;
+    } else {
+        return FALSE;
+    }
+}
+BOOL CRM_Exec_TurnOn(EXEC_MSSG_RCVD *Peticion)
+{
+    //TODO apagar transceptor. HAL
+    if (!SwitchOnRI(Peticion->Transceiver)) {
         return TRUE;
     } else {
         return FALSE;
