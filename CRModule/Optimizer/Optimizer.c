@@ -253,7 +253,7 @@ NOACEPTA: //Si no queremos notifcar el no cambio comentariamos y dejaríamos solo
                 PeticionProb.DataType = NetNode;
                 PeticionProb.EUINodo = Peticion->EUINodo;
                 PeticionProb.Param1 = &TipoDeSubDato;
-                PeticionProb.Param2 = &IndiceTabla;//XXX y no parece necesario
+                PeticionProb.Param2 = &IndiceTabla;//XXX
                 PeticionProb.Param3 = &PeticionesEnviadas;
                 PeticionProb.Param4 = &PeticionesAceptadas;
                 PeticionProb.Transceiver = Peticion->Transceiver;//XXX
@@ -303,7 +303,7 @@ NOACEPTA: //Si no queremos notifcar el no cambio comentariamos y dejaríamos solo
                 PeticionActualProb.DataType = NetNode;
                 PeticionActualProb.Transceiver = Peticion->Transceiver;//XXX
                 PeticionActualProb.Param1 = &TipoDeSubDato;
-                PeticionActualProb.Param2 = &IndiceTabla; //XXX y no parece necesario
+                PeticionActualProb.Param2 = &IndiceTabla; //XXX
                 PeticionActualProb.Param3 = &PeticionesEnviadas;
                 PeticionActualProb.Param4 = &PeticionesAceptadas;
                 /*********FIN MESSAGE CREATION*******/
