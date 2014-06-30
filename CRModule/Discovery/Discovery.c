@@ -93,12 +93,13 @@ BYTE CRM_Disc_SignalDetection(DISC_MSSG_RCVD *Peticion)
     SetChannel(Peticion->Transceiver, BackupCurrentChannel);
     return CanalMenosRuidoso;
 }
-BOOL CRM_Disc_ActiveScan(DISC_MSSG_RCVD *Peticion)
+BYTE CRM_Disc_ActiveScan(DISC_MSSG_RCVD *Peticion)
 {
     //MiApp_SearchConnection(*((BYTE*)(Peticion->Param2)), *((DWORD*)(Peticion->Param1)));
-    PerformActiveScan(Peticion->Transceiver, *((BYTE*)(Peticion->Param2)), *((DWORD*)(Peticion->Param1)));
+    BYTE nActiveScanResults = PerformActiveScan(Peticion->Transceiver, *((BYTE*)(Peticion->Param2)), *((DWORD*)(Peticion->Param1)));
     //TODO llamadas a funciones de la HAL.
-    return TRUE;//TODO devolver apropiadamnete TRUE o FALSE.
+    //return TRUE;//TODO devolver apropiadamnete TRUE o FALSE.
+    return nActiveScanResults;
 }
 BOOL CRM_Disc_ChckTrnsc(DISC_MSSG_RCVD *Peticion)//XXX-Willy.Al optimizer??
 {

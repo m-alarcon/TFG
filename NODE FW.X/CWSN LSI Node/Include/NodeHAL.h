@@ -294,6 +294,7 @@ BYTE PerformActiveScan(radioInterface ri, INPUT BYTE ScanDuration, INPUT DWORD C
 BYTE GetRSSI(radioInterface ri, BYTE *storeItHere);
 BYTE GetLQI(radioInterface ri, BYTE *storeItHere);
 WORD_VAL GetPANID(radioInterface ri);
+BYTE MiWi_Search4ShortAddress(radioInterface ri, INPUT BYTE *DireccionCorta, INPUT CONNECTION_ENTRY *Tabla);
 
 //Node's variables saving:
 BYTE SaveConnTable(BYTE *storeItFromHere);

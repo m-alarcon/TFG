@@ -48,8 +48,10 @@ BOOL CRM_Exec_Mssg_Rcvd(EXEC_MSSG_RCVD *Peticion)
         case(ActTxPwr):
             CRM_Exec_TxPower(Peticion);
             break;
-        case(ActReset):
-            CRM_Exec_Reset(Peticion);
+        //case(ActReset):
+        case (ActTurnOn):
+            //CRM_Exec_Reset(Peticion);
+            CRM_Exec_TurnOn(Peticion);
             break;
         case(ActSleep):
             CRM_Exec_Sleep(Peticion);
@@ -71,7 +73,11 @@ BOOL CRM_Exec_Mssg_Rcvd(EXEC_MSSG_RCVD *Peticion)
 BOOL CRM_Exec_SleepMCU(EXEC_MSSG_RCVD *Peticion)
 {
     //TODO dormir MCU. HAL?
-    return TRUE;
+    if (!SleepNode(Peticion->Transceiver,Peticion->Param2)) {
+        return TRUE;
+    } else {
+        return FALSE;
+    }
 }
 BOOL CRM_Exec_ResetMCU(EXEC_MSSG_RCVD *Peticion)
 {
@@ -89,38 +95,53 @@ BOOL CRM_Exec_ChanHoping(EXEC_MSSG_RCVD *Peticion)
         (*Peticion).Param4 = &valor;
     #endif
     //Fin de TEST1
-    SetChannel(Peticion->Transceiver, Peticion->Param1);//CRM_HAL_ChanHop(Peticion->Param1);/*Esta es la custom que no avisa.*/
-//    StartChannelHopping(Peticion->Param1);/*Este ya hace broadcast avisando del
-//                                           cambio de canal y los que reciben el
-//                                           paquete de notificacion de cambio de
-//                                           canal se cambian automaticamente. Lo
-//                                            que no siempre puede interesar.*/
-    return TRUE;
+    if (!SetChannel(Peticion->Transceiver, Peticion->Param1)) {
+        return TRUE;
+    } else {
+        return FALSE;
+    }
 }
 BOOL CRM_Exec_TxPower(EXEC_MSSG_RCVD *Peticion)
 {
     //TODO controlar la potencia de transmision. HAL
-    return TRUE;
+    if (!SetTXPower(Peticion->Transceiver, Peticion->Param1)) {
+        return TRUE;
+    } else {
+        return FALSE;
+    }
 }
-BOOL CRM_Exec_Reset(EXEC_MSSG_RCVD *Peticion)
-{
-    //TODO resetear transceiver. HAL
-    return TRUE;
-}
+//Quito esta función para añadir CRM_Exec_TurnOn
+//BOOL CRM_Exec_Reset(EXEC_MSSG_RCVD *Peticion)
+//{
+//    //TODO resetear transceiver. HAL
+//    return TRUE;
+//}
 BOOL CRM_Exec_Sleep(EXEC_MSSG_RCVD *Peticion)
 {
     ///TODO dormir transceiver. HAL
-    return TRUE;
+    if (!SleepRadioInterface(Peticion->Transceiver)) {
+        return TRUE;
+    } else {
+        return FALSE;
+    }
 }
 BOOL CRM_Exec_Wake(EXEC_MSSG_RCVD *Peticion)
 {
     //TODO despertar transceiver. HAL
-    return TRUE;
+    if (!WakeUpRadioInterface(Peticion->Transceiver)) {
+        return TRUE;
+    } else {
+        return FALSE;
+    }
 }
 BOOL CRM_Exec_TurnOff(EXEC_MSSG_RCVD *Peticion)
 {
     //TODO apagar transceptor. HAL
-     return TRUE;
+    if (!SwitchOffRI(Peticion->Transceiver)) {
+        return TRUE;
+    } else {
+        return FALSE;
+    }
 }
 /*Fin de funciones de funcionalidad propia del sub-modulo*/
 

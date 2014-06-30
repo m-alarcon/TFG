@@ -755,6 +755,74 @@ WORD_VAL GetPANID(radioInterface ri) {
     #endif
 }
 
+/*********************************************************************
+ * Function:        BYTE MiWi_Search4ShortAddress(INPUT BYTE *DireccionCorta)
+ *
+ * PreCondition:    tempShortAddress and tempPANID are set to the device
+ *                  that you are looking for
+ *
+ * Input:           INPUT BYTE *DireccionCorta, el puntero a la direccion corta
+ *                  de la cual queremos saber el indice de la tabla.
+ *
+ * Output:          BYTE - the index of the network table entry of the
+ *                  requested device.  0xFF indicates that the requested
+ *                  device doesn't exist in the network table
+ *
+ * Side Effects:    None
+ *
+ * Overview:        This function looks up the index of a node or network
+ *                  in the network table by short address.
+ ********************************************************************/
+BYTE MiWi_Search4ShortAddress(radioInterface ri, INPUT BYTE *DireccionCorta, INPUT CONNECTION_ENTRY *Tabla)
+{
+    #if !defined(PROTOCOL_P2P)
+    BYTE i;
+
+    WORD_VAL tmpDireccionCorta;
+
+    tmpDireccionCorta.v[0] = DireccionCorta[0];
+    tmpDireccionCorta.v[1] = DireccionCorta[1];
+
+    switch (ri) {
+        case MIWI_0434:
+            for(i=0;i<CONNECTION_SIZE;i++)
+            {
+                if(Tabla[i].status.bits.isValid && Tabla[i].status.bits.shortAddressValid)
+                {
+                    if(Tabla[i].MIWI0434AltAddress.Val == tmpDireccionCorta.Val)//(Tabla[i].AltAddress.Val == tmpDireccionCorta.Val)
+                    {
+                        return i;
+                    }
+                }
+            }
+        case MIWI_0868:
+            for(i=0;i<CONNECTION_SIZE;i++)
+            {
+                if(Tabla[i].status.bits.isValid && Tabla[i].status.bits.shortAddressValid)
+                {
+                    if(Tabla[i].MIWI0868AltAddress.Val == tmpDireccionCorta.Val)//(Tabla[i].AltAddress.Val == tmpDireccionCorta.Val)
+                    {
+                        return i;
+                    }
+                }
+            }
+        case MIWI_2400:
+            for(i=0;i<CONNECTION_SIZE;i++)
+            {
+                if(Tabla[i].status.bits.isValid && Tabla[i].status.bits.shortAddressValid)
+                {
+                    if(Tabla[i].MIWI2400AltAddress.Val == tmpDireccionCorta.Val)//(Tabla[i].AltAddress.Val == tmpDireccionCorta.Val)
+                    {
+                        return i;
+                    }
+                }
+            }
+    }
+
+    #endif
+    return 0xFF;
+}
+
 /*******************************************************************************
  * Function:    GetFreeTXBufSpace(radioInterface ri)
  * Input:       radioInterface ri - radio interface chosen.
@@ -3073,7 +3141,7 @@ BYTE GetRXSourceAddr(radioInterface ri, BYTE *storeItFromHere){
 }
 
 /*
- * Nombre: BOOL GuilJa_MiWi_Send_Buffer(BYTE *Buffer, BYTE *Address)
+ * Nombre: BOOL MiWi_Send_Buffer(BYTE *Buffer, BYTE *Address)
  * Función: Enviar los datos contenidos en el buffer que se pasa como parametro.
  * Devuelve: TRUE o FALSE
  * Parametros: La interfaz radio, el puntero al buffer y la direccion.

@@ -42,8 +42,8 @@
 
 typedef enum _EXECACTION
 {
-    ActSleepMCU = 0x01, ActResetMCU, ActChnHop, ActTxPwr, ActReset, ActSleep, ActWake, ActTurnOff
-} EXECACTION;
+    ActSleepMCU = 0x01, ActResetMCU, ActChnHop, ActTxPwr, ActTurnOn, ActSleep, ActWake, ActTurnOff
+} EXECACTION;//quito ActReset y pongo ActTurnOn
 
 /*La estructura de los parametros del Mensaje con destino este modulo.*/
 typedef struct _EXEC_MSSG_RCVD
@@ -80,10 +80,11 @@ BOOL CRM_Exec_ResetMCU(EXEC_MSSG_RCVD *Peticion);
 /*De funcionalidad propia del modulo*/
 BOOL CRM_Exec_ChanHoping(EXEC_MSSG_RCVD *Peticion);
 BOOL CRM_Exec_TxPower(EXEC_MSSG_RCVD *Peticion);
-BOOL CRM_Exec_Reset(EXEC_MSSG_RCVD *Peticion);
+//BOOL CRM_Exec_Reset(EXEC_MSSG_RCVD *Peticion);
 BOOL CRM_Exec_Sleep(EXEC_MSSG_RCVD *Peticion);
 BOOL CRM_Exec_Wake(EXEC_MSSG_RCVD *Peticion);
 BOOL CRM_Exec_TurnOff(EXEC_MSSG_RCVD *Peticion);
+BOOL CRM_Exec_TurnOn(EXEC_MSSG_RCVD *Peticion);
 /*Fin de las funciones funcionalidad propia*/
 
 /*****************************************************************************/

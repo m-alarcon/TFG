@@ -148,8 +148,9 @@ INIT_STAGE:
     //goto TX_RX_MAXRATE;
     //goto SAVE_RESTORE;
     //goto POWER_DISSIPATION_TEST;
-    goto DEMO_PFC_AGUS;
+    //goto DEMO_PFC_AGUS;
     //goto STAGE02;
+    goto CRMODULE_TEST;
 
 STAGE01:        //COMPROBACION DEL ESTADO INICIAL.
 
@@ -1318,6 +1319,11 @@ POWER_DISSIPATION_TEST:
                 }
 
         #endif
+
+  CRMODULE_TEST:
+
+        printf("Crea el buffer de 30 KB y comienza con la aplicación:\n");
+
 }
     return 0;
 }

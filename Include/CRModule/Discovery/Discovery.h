@@ -72,7 +72,7 @@ void* CRM_Disc_Mssg_Rcvd(DISC_MSSG_RCVD *Peticion);
 
 /*Propias del modulo*/
 BYTE CRM_Disc_SignalDetection(DISC_MSSG_RCVD *Peticion);
-BOOL CRM_Disc_ActiveScan(DISC_MSSG_RCVD *Peticion);
+BYTE CRM_Disc_ActiveScan(DISC_MSSG_RCVD *Peticion);
 BOOL CRM_Disc_ChckTrnsc(DISC_MSSG_RCVD *Peticion);//XXX-Willy.Al optimizer??
 BOOL CRM_Disc_Services(DISC_MSSG_RCVD *Peticion);
 BOOL CRM_Disc_NwksDisc(DISC_MSSG_RCVD *Peticion);

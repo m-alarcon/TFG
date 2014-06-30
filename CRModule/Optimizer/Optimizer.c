@@ -245,7 +245,7 @@ NOACEPTA: //Si no queremos notifcar el no cambio comentariamos y dejaríamos solo
             Printf("Respuesta recibida al cambio de canal ...");
                 /*********MESSAGE CREATION*******/
                 TipoDeSubDato = AdditionalNetNode;
-                //IndiceTabla = GuilJa_MiWi_Search4ShorAddrss( Peticion->EUINodo, Repo_Conn_Table); /*XXX-GuilJa REVISAR
+                IndiceTabla = MiWi_Search4ShortAddress(Peticion->Transceiver, Peticion->EUINodo, Repo_Conn_Table); /*XXX-GuilJa REVISAR
                                                                                                    //porque la función busca
                                                                                                    //direcciones cortas.*/
 
@@ -253,7 +253,7 @@ NOACEPTA: //Si no queremos notifcar el no cambio comentariamos y dejaríamos solo
                 PeticionProb.DataType = NetNode;
                 PeticionProb.EUINodo = Peticion->EUINodo;
                 PeticionProb.Param1 = &TipoDeSubDato;
-                //PeticionProb.Param2 = &IndiceTabla;//XXX y no parece necesario
+                PeticionProb.Param2 = &IndiceTabla;//XXX y no parece necesario
                 PeticionProb.Param3 = &PeticionesEnviadas;
                 PeticionProb.Param4 = &PeticionesAceptadas;
                 PeticionProb.Transceiver = Peticion->Transceiver;//XXX
@@ -303,7 +303,7 @@ NOACEPTA: //Si no queremos notifcar el no cambio comentariamos y dejaríamos solo
                 PeticionActualProb.DataType = NetNode;
                 PeticionActualProb.Transceiver = Peticion->Transceiver;//XXX
                 PeticionActualProb.Param1 = &TipoDeSubDato;
-                //PeticionActualProb.Param2 = &IndiceTabla; //XXX y no parece necesario
+                PeticionActualProb.Param2 = &IndiceTabla; //XXX y no parece necesario
                 PeticionActualProb.Param3 = &PeticionesEnviadas;
                 PeticionActualProb.Param4 = &PeticionesAceptadas;
                 /*********FIN MESSAGE CREATION*******/
