@@ -57,6 +57,10 @@
 #if defined CRMODULE
     #include "CRModule/Messenger/Messenger.h"
 #endif
+//Para ButtonPressed()
+BOOL PUSH_BUTTON_pressed;
+MIWI_TICK PUSH_BUTTON_press_time;
+#define DEBOUNCE_TIME 0x00003FFF
 
 #if defined(__PIC32MX__)
     /* MAX SPI CLOCK FREQ SUPPORTED FOR MIWI TRANSCIEVER */
@@ -564,3 +568,63 @@ void __ISR(_TIMER_4_VECTOR, ipl3)RutinaOptimizer(void)
                        //rutina de atencion.
 }
 /*Fin de la rutina de interrupcion*/
+
+
+
+/*********************************************************************
+ * Function:        BYTE ButtonPressed(void)
+ *
+ * PreCondition:    None
+ *
+ * Input:           None
+ *
+ * Output:          Byte to indicate which button has been pressed.
+ *                  Return 0 if no button pressed.
+ *
+ * Side Effects:
+ *
+ * Overview:        This function check if any button has been pressed
+ *
+ * Note:
+ ********************************************************************/
+BYTE ButtonPressed(void)
+{
+    MIWI_TICK tickDifference;
+
+    if(BUTTON_1 == 0)
+    {
+        //if the button was previously not pressed
+        if(PUSH_BUTTON_pressed == FALSE)
+        {
+            PUSH_BUTTON_pressed = TRUE;
+            PUSH_BUTTON_press_time = MiWi_TickGet();
+            return 1;
+        }
+    }
+    else if(BUTTON_2 == 0)
+    {
+        //if the button was previously not pressed
+        if(PUSH_BUTTON_pressed == FALSE)
+        {
+            PUSH_BUTTON_pressed = TRUE;
+            PUSH_BUTTON_press_time = MiWi_TickGet();
+            return 2;
+        }
+    }
+    else
+    {
+        //get the current time
+        MIWI_TICK t = MiWi_TickGet();
+
+        //if the button has been released long enough
+        tickDifference.Val = MiWi_TickGetDiff(t,PUSH_BUTTON_press_time);
+
+        //then we can mark it as not pressed
+        if(tickDifference.Val > DEBOUNCE_TIME)
+        {
+            PUSH_BUTTON_pressed = FALSE;
+        }
+    }
+
+    return 0;
+}

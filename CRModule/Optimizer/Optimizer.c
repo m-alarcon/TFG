@@ -34,26 +34,26 @@
 WORD Periodomseg;
 WORD Cuentamseg; //Para la cuenta de los mseg que han pasado.
 
-//extern BOOL EnviandoMssgApp;/*Para  la preuba de que mientras se envían datos
+extern BOOL EnviandoMssgApp;/*Para  la preuba de que mientras se envían datos
                              /*de appliacion no se puede realizar la estrategia
                              de optimizacion. Me refiero a justo en el momento
                              en el que se tocan funciones de miapp que pueden
                              tocar registros conflictivos. Ver enviodatos.c*/
-//extern BOOL RecibiendoMssg;/*PArecido a lo de arriba.*/
+extern BOOL RecibiendoMssg;/*PArecido a lo de arriba.*/
 
-//#if defined(TEST4)
+#if defined(TEST4)
 BYTE BufferPrueba[RX_BUFFER_SIZE];
 BYTE Direccion[MY_ADDRESS_LENGTH];
 RECEIVED_MESSAGE BufferRecepcionPrueba;
 VCC_MSSG_RCVD PeticionRecepcion; //La del VCC
 OPTM_MSSG_RCVD PeticionTest2; //La del Optmizer
 
-//#endif
+#endif
 #if defined TEST5
     MIWI_TICK t1G, t2G;
     DWORD_VAL tTG;
 #endif
-//#if defined TEST6
+#if defined TEST6
     OPTSTATMACH OptmEstado;
     WORD MilisDeTimeOut;
 
@@ -62,9 +62,9 @@ OPTM_MSSG_RCVD PeticionTest2; //La del Optmizer
     WORD ProbabilidadDeCambio;
 
 
-//#endif
+#endif
 
-
+extern radioInterface ri;
 
 //Variables para las diferentes estrategias de optimizacion.
     //Optimzier de Elena.
@@ -173,11 +173,11 @@ NOACEPTA: //Si no queremos notifcar el no cambio comentariamos y dejaríamos solo
             {
                 /*Creamos la respuesta para el nodo externo y la enviamos.*/
                     /*********MESSAGE CREATION*******/
-                    BYTE PeticionNodoExtBuff[] = {VccCtrlMssg, SubM_Opt, ActProcRq, ProcChangAnsw, FALSE};
+                    BYTE PeticionNodoExtBuff[] = {VccCtrlMssg, SubM_Opt, ActProcRq, ProcChangAnsw, FALSE, ri};
                     PeticionNodoExtVCC.DirNodDest = Peticion->EUINodo;
                     PeticionNodoExtVCC.Action = ActSend;
                     PeticionNodoExtVCC.BufferVCC = PeticionNodoExtBuff;
-                    PeticionNodoExtVCC.Transceiver = Peticion->Transceiver;//XXX
+                    PeticionNodoExtVCC.Transceiver = ri;//Peticion->Transceiver;
                     PeticionNodoExt.Peticion_Destino.PeticionVCC = &PeticionNodoExtVCC;
                     /*********FIN MESSAGE CREATION*******/
                 CRM_Message(VCC, SubM_Ext, &PeticionNodoExt);
@@ -197,20 +197,22 @@ NOACEPTA: //Si no queremos notifcar el no cambio comentariamos y dejaríamos solo
                     /*********MESSAGE CREATION*******/
                     PeticionCambio.Action = ActChnHop;
                     PeticionCambio.Param1 = *((BYTE*)(Peticion->Param2));
-                    PeticionCambio.Transceiver = Peticion->Transceiver;//XXX
+                    PeticionCambio.Transceiver = Peticion->Transceiver;
+                    ri = Peticion->Transceiver;//XXX
                     /*********FIN MESSAGE CREATION*******/
                 CRM_Message(NMM, SubM_Exec, &PeticionCambio);
                 /*Fin del Message para executor.*/
                 char traza[80];
-                sprintf(traza, "\r\nCambiado al canal %d.\r\n", GetOpChannel(Peticion->Transceiver));
+                sprintf(traza, "\r\nCambiado al canal %d de la interfaz %d.\r\n",
+                        GetOpChannel(Peticion->Transceiver), ri);
                 Printf(traza);
                 /*Creamos la respuesta para el nodo externo y la enviamos.*/
                     /*********MESSAGE CREATION*******/
-                    BYTE PeticionNodoExtBuff[] = {VccCtrlMssg, SubM_Opt, ActProcRq, ProcChangAnsw, TRUE};
+                    BYTE PeticionNodoExtBuff[] = {VccCtrlMssg, SubM_Opt, ActProcRq, ProcChangAnsw, TRUE, ri};
                     PeticionNodoExtVCC.DirNodDest = Peticion->EUINodo;
                     PeticionNodoExtVCC.Action = ActSend;
                     PeticionNodoExtVCC.BufferVCC = PeticionNodoExtBuff;
-                    PeticionNodoExtVCC.Transceiver = Peticion->Transceiver;//XXX
+                    PeticionNodoExtVCC.Transceiver = ri;//Peticion->Transceiver;
                     PeticionNodoExt.Peticion_Destino.PeticionVCC = &PeticionNodoExtVCC;
                     /*********FIN MESSAGE CREATION*******/
                     CRM_Message(VCC, SubM_Ext, &PeticionNodoExt);
@@ -337,22 +339,44 @@ BOOL CRM_Optm_GameTheory(OPTM_MSSG_RCVD *Peticion)
             {
                 /*Primero calculamos el canal optimo para el cambio.*/
                     //Creamos unos parametros para un mensaje para Discovery.
-                    BYTE CanalOptimo = 11; //Inicializacion, prescindible.
+                    //Para cada una de las interfaces:
+                    BYTE CanalOptimo, CanalOptimo434, CanalOptimo868, CanalOptimo2400;
                     DWORD TodosCanales = 0xFFFFFFFF;
                     BYTE TiempoScan = 5;
                     BYTE TipoScan = NOISE_DETECT_ENERGY;
-                    BYTE RSSIResultado = 255;
+                    //Para cada una de las interfaces:
+                    BYTE RSSIResultado434 = 255;
+                    BYTE RSSIResultado868 = 255;
+                    BYTE RSSIResultado2400 = 255;
                     //Creacion de un mensaje de discovery.
                     DISC_MSSG_RCVD PeticionDiscTest2;
                     PeticionDiscTest2.OrgModule = SubM_Opt;
                     PeticionDiscTest2.Action = ActSignDetc;
-                    PeticionDiscTest2.Transceiver = Peticion->Transceiver;//XXX
                     PeticionDiscTest2.Param1 = &TodosCanales;
                     PeticionDiscTest2.Param2 = &TiempoScan;
                     PeticionDiscTest2.Param3 = &TipoScan; //NOISE DETECT ENERGY.
-                    PeticionDiscTest2.Param4 = &RSSIResultado;
 
-                    CanalOptimo = *(BYTE*)CRM_Message(NMM, SubM_Disc, &PeticionDiscTest2);//envio del messge.
+                    //Ahora calculo el canal óptimo de cada interfaz y el canal más óptimo de todos:
+                    PeticionDiscTest2.Transceiver = MIWI_0434;
+                    PeticionDiscTest2.Param4 = &RSSIResultado434;
+                    CanalOptimo434 = *(BYTE*)CRM_Message(NMM, SubM_Disc, &PeticionDiscTest2);
+                    PeticionDiscTest2.Transceiver = MIWI_0868;
+                    PeticionDiscTest2.Param4 = &RSSIResultado868;
+                    CanalOptimo868 = *(BYTE*)CRM_Message(NMM, SubM_Disc, &PeticionDiscTest2);
+                    PeticionDiscTest2.Transceiver = MIWI_2400;
+                    PeticionDiscTest2.Param4 = &RSSIResultado2400;
+                    CanalOptimo2400 = *(BYTE*)CRM_Message(NMM, SubM_Disc, &PeticionDiscTest2);
+                    if ((RSSIResultado434 <= RSSIResultado868) && (RSSIResultado434 <= RSSIResultado2400)) {
+                        CanalOptimo = CanalOptimo434;
+                        ri = MIWI_0434;
+                    } else if ((RSSIResultado868 < RSSIResultado434) && (RSSIResultado868 <= RSSIResultado2400)) {
+                        CanalOptimo = CanalOptimo868;
+                        ri = MIWI_0868;
+                    } else {
+                        CanalOptimo = CanalOptimo2400;
+                        ri = MIWI_2400;
+                    }
+                    //Jose//CanalOptimo = *(BYTE*)CRM_Message(NMM, SubM_Disc, &PeticionDiscTest2);//envio del messge.
 //                  CRM_Message(NMM, SubM_Disc, &PeticionDiscTest2);//envio del messge.
 //                    CanalOptimo = *((BYTE*)(PeticionDiscTest2.Param4));
                 /*Fin del calculo del canal optimo.*/
@@ -362,7 +386,7 @@ BOOL CRM_Optm_GameTheory(OPTM_MSSG_RCVD *Peticion)
                     VCC_MSSG_RCVD PeticionNodoExtVCC;
 
                     BYTE EUI_Dest[] = {0x01, EUI_1, EUI_2, EUI_3, EUI_4, EUI_5, EUI_6, EUI_7};
-                    BYTE PeticionNodoExtBuff[] = {VccCtrlMssg, SubM_Opt, ActProcRq, ProcAsk4Chng, CanalOptimo};
+                    BYTE PeticionNodoExtBuff[] = {VccCtrlMssg, SubM_Opt, ActProcRq, ProcAsk4Chng, CanalOptimo, ri};
                     PeticionNodoExtVCC.DirNodDest = EUI_Dest;
                     PeticionNodoExtVCC.Action = ActSend;
                     PeticionNodoExtVCC.BufferVCC = PeticionNodoExtBuff;
@@ -383,12 +407,13 @@ BOOL CRM_Optm_GameTheory(OPTM_MSSG_RCVD *Peticion)
                     PeticionExecTest2.OrgModule = SubM_Opt;
                     PeticionExecTest2.Action = ActChnHop;
                     PeticionExecTest2.Param1 = CanalOptimo;
-                    PeticionExecTest2.Transceiver = Peticion->Transceiver;//XXX
+                    PeticionExecTest2.Transceiver = ri;//Peticion->Transceiver;
 
                     CRM_Message(NMM, SubM_Exec, &PeticionExecTest2);//envio del messg.
                 /*Fin del Message para Executor.*/
                 char traza[80];
-                sprintf(traza, "\r\nCambiado al canal %d y enviada la peticion al otro nodo.\r\n", GetOpChannel(Peticion->Transceiver));
+                sprintf(traza, "\r\nCambiado al canal %d de la interfaz %d y enviada "
+                        "la peticion al otro nodo.\r\n", GetOpChannel(Peticion->Transceiver), ri);
                 Printf(traza);
 
                     //TODO. Actualizar la probabilidad de cambio.
@@ -603,7 +628,7 @@ BOOL CRM_Optm_Int(void)
     }
     else if(Cuentamseg==Periodomseg)
     {
-        //if(!EnviandoMssgApp && !RecibiendoMssg)
+        if(!EnviandoMssgApp && !RecibiendoMssg)
         {
             Cuentamseg = 0;
 #if defined TEST4 || defined TEST5
@@ -688,6 +713,7 @@ BYTE Test2(void)
 #if defined(TEST4)
 BYTE Test4(void)
 {
+    PeticionTest2.Transceiver = ri;
     CRM_Optm_GameTheory(&PeticionTest2);
     return 0;
 }

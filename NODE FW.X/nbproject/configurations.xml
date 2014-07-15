@@ -135,6 +135,8 @@
     <logicalFolder name="HeaderFiles"
                    displayName="Header Files"
                    projectFiles="true">
+      <itemPath>Buffer.h</itemPath>
+      <itemPath>AppDemo.h</itemPath>
     </logicalFolder>
     <logicalFolder name="Include" displayName="Include" projectFiles="true">
       <logicalFolder name="CRModule" displayName="CRModule" projectFiles="true">
@@ -167,6 +169,8 @@
     <logicalFolder name="SourceFiles"
                    displayName="Source Files"
                    projectFiles="true">
+      <itemPath>Buffer.c</itemPath>
+      <itemPath>AppDemo.c</itemPath>
     </logicalFolder>
     <logicalFolder name="ExternalFiles"
                    displayName="Important Files"

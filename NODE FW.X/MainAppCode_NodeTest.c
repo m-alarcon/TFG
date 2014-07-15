@@ -1322,7 +1322,7 @@ POWER_DISSIPATION_TEST:
 
   CRMODULE_TEST:
 
-        printf("Crea el buffer de 30 KB y comienza con la aplicación:\n");
+        Rutina_Principal();
 
 }
     return 0;
