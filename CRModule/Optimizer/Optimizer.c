@@ -178,6 +178,8 @@ NOACEPTA: //Si no queremos notifcar el no cambio comentariamos y dejaríamos solo
                     PeticionNodoExtVCC.Action = ActSend;
                     PeticionNodoExtVCC.BufferVCC = PeticionNodoExtBuff;
                     PeticionNodoExtVCC.Transceiver = ri;//Peticion->Transceiver;
+                    BYTE sizeOfBufferVCC = 6;
+                    PeticionNodoExtVCC.Param1 = &sizeOfBufferVCC;
                     PeticionNodoExt.Peticion_Destino.PeticionVCC = &PeticionNodoExtVCC;
                     /*********FIN MESSAGE CREATION*******/
                 CRM_Message(VCC, SubM_Ext, &PeticionNodoExt);
@@ -204,7 +206,7 @@ NOACEPTA: //Si no queremos notifcar el no cambio comentariamos y dejaríamos solo
                 /*Fin del Message para executor.*/
                 char traza[80];
                 sprintf(traza, "\r\nCambiado al canal %d de la interfaz %d.\r\n",
-                        GetOpChannel(Peticion->Transceiver), ri);
+                        GetOpChannel(ri), ri);
                 Printf(traza);
                 /*Creamos la respuesta para el nodo externo y la enviamos.*/
                     /*********MESSAGE CREATION*******/
@@ -213,6 +215,8 @@ NOACEPTA: //Si no queremos notifcar el no cambio comentariamos y dejaríamos solo
                     PeticionNodoExtVCC.Action = ActSend;
                     PeticionNodoExtVCC.BufferVCC = PeticionNodoExtBuff;
                     PeticionNodoExtVCC.Transceiver = ri;//Peticion->Transceiver;
+                    BYTE sizeOfBufferVCC = 6;
+                    PeticionNodoExtVCC.Param1 = &sizeOfBufferVCC;
                     PeticionNodoExt.Peticion_Destino.PeticionVCC = &PeticionNodoExtVCC;
                     /*********FIN MESSAGE CREATION*******/
                     CRM_Message(VCC, SubM_Ext, &PeticionNodoExt);
@@ -385,12 +389,15 @@ BOOL CRM_Optm_GameTheory(OPTM_MSSG_RCVD *Peticion)
                     MSN_MSSG_RCVD PeticionNodoExt;
                     VCC_MSSG_RCVD PeticionNodoExtVCC;
 
-                    BYTE EUI_Dest[] = {0x01, EUI_1, EUI_2, EUI_3, EUI_4, EUI_5, EUI_6, EUI_7};
+                    //BYTE EUI_Dest[] = {0x01, EUI_1, EUI_2, EUI_3, EUI_4, EUI_5, EUI_6, EUI_7};
+                    BYTE EUI_Dest[] = {EUI_0, EUI_1, EUI_2, EUI_3, EUI_4, EUI_5, EUI_6, 0x22};
                     BYTE PeticionNodoExtBuff[] = {VccCtrlMssg, SubM_Opt, ActProcRq, ProcAsk4Chng, CanalOptimo, ri};
                     PeticionNodoExtVCC.DirNodDest = EUI_Dest;
                     PeticionNodoExtVCC.Action = ActSend;
                     PeticionNodoExtVCC.BufferVCC = PeticionNodoExtBuff;
                     PeticionNodoExtVCC.Transceiver = Peticion->Transceiver;//XXX
+                    BYTE sizeOfBufferVCC = 6;
+                    PeticionNodoExtVCC.Param1 = &sizeOfBufferVCC;
 
                     PeticionNodoExt.Peticion_Destino.PeticionVCC = &PeticionNodoExtVCC;
 
@@ -633,6 +640,7 @@ BOOL CRM_Optm_Int(void)
             Cuentamseg = 0;
 #if defined TEST4 || defined TEST5
 #if defined(NODE_2)//NodoReceptor)
+            Printf("\r\nSe ejecuta la parte reactiva de la estrategia cognitiva.");
             //        t2 = MiWi_TickGet(); //XXX-GuilJa lo llevamos al procesado del test
             //        tT = MiWi_TickGetDiff(t2,t1); //más arriba.
             //        Printf("\r\n");
@@ -649,6 +657,7 @@ BOOL CRM_Optm_Int(void)
 //                    DumpConnection(0xFF); //Para comprobar que hemos cambiado de canal
             return TRUE;
 #elif defined(NODE_1)//NodoEmisor)
+            Printf("\r\nSe ejecuta la parte activa de la estrategia cognitiva.");
             Test4();
             //        Printf("\r\n");
             //        Printf("El numero de Ticks para el nodo emisor (rutina de optimizacion, envio de mensaje y cambio de canal) :");

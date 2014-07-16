@@ -1322,6 +1322,7 @@ POWER_DISSIPATION_TEST:
 
   CRMODULE_TEST:
 
+        //continue;
         Rutina_Principal();
 
 }

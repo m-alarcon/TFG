@@ -282,7 +282,7 @@ BYTE SendPckt(radioInterface ri, BYTE AddrMode, BYTE *Address);
 BYTE WhichRIHasData();
 BYTE GetRXData(radioInterface ri, BYTE *storeItHere);
 BYTE GetRXSourceAddr(radioInterface ri, BYTE *storeItFromHere);
-BYTE Send_Buffer(radioInterface ri, BYTE *Buffer, BYTE *Address);
+BYTE Send_Buffer(radioInterface ri, BYTE *Buffer, BYTE *Address, BYTE sizeOfBuffer);
 
 //Security
 BYTE SetSecurityLevel(BYTE SecLevel);

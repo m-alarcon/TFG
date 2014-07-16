@@ -135,7 +135,6 @@
     <logicalFolder name="HeaderFiles"
                    displayName="Header Files"
                    projectFiles="true">
-      <itemPath>Buffer.h</itemPath>
       <itemPath>AppDemo.h</itemPath>
     </logicalFolder>
     <logicalFolder name="Include" displayName="Include" projectFiles="true">
@@ -169,7 +168,6 @@
     <logicalFolder name="SourceFiles"
                    displayName="Source Files"
                    projectFiles="true">
-      <itemPath>Buffer.c</itemPath>
       <itemPath>AppDemo.c</itemPath>
     </logicalFolder>
     <logicalFolder name="ExternalFiles"
@@ -353,6 +351,7 @@
         <property key="UART5" value="true"/>
         <property key="UART6" value="true"/>
         <property key="debugoptions.useswbreakpoints" value="false"/>
+        <property key="firmware.download.all" value="false"/>
         <property key="hwtoolclock.frcindebug" value="false"/>
         <property key="memories.aux" value="false"/>
         <property key="memories.bootflash" value="false"/>

@@ -518,6 +518,7 @@ void WriteStringPC(const char *string){
  * Overview:    Configuration and initialization of CRModule.
  * Note:        This routine needs to be called after initialising MiWi stack.
  ******************************************************************************/
+#if defined(CRMODULE)
 void InitCRModule(void){
     WORD TiempoT4 = 1; //En mseg;
     WORD Prescaler = 32; //Selecciono el prescaler, si lo
@@ -536,9 +537,11 @@ void InitCRModule(void){
     ACCCTRL_MSSG_RCVD PeticionCrearEntrada;
     PeticionCrearEntrada.Action = ActAddEntry;
     #if defined NODE_1
-        BYTE EUI_Permiso[] = {0x01, EUI_1, EUI_2, EUI_3, EUI_4, EUI_5, EUI_6, EUI_7};
+        //BYTE EUI_Permiso[] = {0x01, EUI_1, EUI_2, EUI_3, EUI_4, EUI_5, EUI_6, EUI_7};
+        BYTE EUI_Permiso[] = {EUI_0, EUI_1, EUI_2, EUI_3, EUI_4, EUI_5, EUI_6, 0x22};
     #elif defined NODE_2
-        BYTE EUI_Permiso[] = {0x05, EUI_1, EUI_2, EUI_3, EUI_4, EUI_5, EUI_6, EUI_7};
+        //BYTE EUI_Permiso[] = {0x05, EUI_1, EUI_2, EUI_3, EUI_4, EUI_5, EUI_6, EUI_7};
+        BYTE EUI_Permiso[] = {EUI_0, EUI_1, EUI_2, EUI_3, EUI_4, EUI_5, EUI_6, 0x11};
     #endif
     PeticionCrearEntrada.DirecOrigen = EUI_Permiso;
     CRM_Message(NMM, SubM_AccCtrl, &PeticionCrearEntrada);
@@ -546,6 +549,7 @@ void InitCRModule(void){
     NodoCerrado = FALSE; //Para que pueda aceptar peticiones de acciones de otros nodos.
     CRM_Repo_Init();
 }
+#endif
 
 /*Funcion de rutina de interrupcion que salta por timer4*/
 //Aqu? invocaremos la ejecucion de optimizer en caso de que est? definido el
@@ -556,6 +560,7 @@ void InitCRModule(void){
 //ejecucion de las rutinas.
 void __ISR(_TIMER_4_VECTOR, ipl3)RutinaOptimizer(void)
 {
+    //Printf("\r\nSe ejecuta la rutina cognitiva.");
     #if defined(CRMODULE)
         CRM_Optm_Int(); //Rutina de ejecucion de optimoizer.
     #endif

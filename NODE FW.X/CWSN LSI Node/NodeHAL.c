@@ -3149,83 +3149,103 @@ BYTE GetRXSourceAddr(radioInterface ri, BYTE *storeItFromHere){
  * NOTA:
  *
  */
-BYTE Send_Buffer(radioInterface ri, BYTE *Buffer, BYTE *Address)
+BYTE Send_Buffer(radioInterface ri, BYTE *Buffer, BYTE *Address, BYTE sizeOfBuffer)
 {
-    miwi_band mb;
-    switch(ri) {
-        case MIWI_0434:
-            #ifndef MIWI_0434_RI
-                Printf("\r\nError: MiWi at 434 MHz is not available");
-                return UNAVAILABLE_INTERFACE_ERROR;
-            #else
-                mb = ISM_434;
-            #endif
-
-        case MIWI_0868:
-            #ifndef MIWI_0868_RI
-                Printf("\r\nError: MiWi at 868 MHz is not available");
-                return UNAVAILABLE_INTERFACE_ERROR;
-            #else
-                mb = ISM_868;
-            #endif
-
-        case MIWI_2400:
-            #ifndef MIWI_2400_RI
-                Printf("\r\nError: MiWi at 2,4 GHz is not available");
-                return UNAVAILABLE_INTERFACE_ERROR;
-            #else
-                mb = ISM_2G4;
-            #endif
-
-        case WIFI_2400:
-            #ifndef WIFI_2400_RI
-                Printf("\r\nError: WiFi is not available");
-                return UNAVAILABLE_INTERFACE_ERROR;
-            #else
-                //TODO
-            #endif
-
-        case NONE:
-            //NOP
-            Printf("\r\nError: NONE of Radio Interfaces were selected to set "
-                   "its channel");
-            return INVALID_INTERFACE_ERROR;
-        case ALL_MIWI:
-        case ALL:
-            Printf("\r\nError: Operating Channels of Radio Interfaces must be set"
-                   " one by one.");
-            return INVALID_INTERFACE_ERROR;
-        default:
-            Printf("\r\nError: Unknown Radio Interface.");
-            return UNKNOWN_INTERFACE_ERROR;
+    BYTE i, j;
+    i = 0;
+    while (i < sizeOfBuffer) {
+        j = PutTXData(ri, Buffer[i]);
+        if (j) {
+            Printf("\r\nFallo al escribir en el buffer. Codigo de error: ");
+            PrintChar(j);
+        } else {
+            i++;
+        }
     }
-    BYTE i;
-
-    MiApp_FlushTx(mb); //"Nos situamos en el inicio del buffer de tx de la pila.
-
-    for(i = 0; i < TX_BUFFER_SIZE; i++)
-    {
-        MiApp_WriteData(Buffer[i], mb); /*Volcamos nuestro buffer al de tx de la
-                                     pila.*/
+    i = SendPckt(ri, LONG_MIWI_ADDRMODE, Address);
+    Printf("\r\nBuffer enviado: ");
+    if (i == 0) {
+        Printf(" => OK");
+    } else {
+        Printf(" => FALLO: ");
+        PrintChar(i);
     }
-
-    /*TODO HECHO cambiar el Connection por address y coger el parametro.*/
-//    if (MiApp_UnicastConnection(0, TRUE) == FALSE) /*Realizamos el envío del
-//                                                    buffer de tx de la pila.*/
-    if (MiApp_UnicastAddress(Address, TRUE, TRUE, mb) == FALSE)
-//    while(MiApp_UnicastAddress(Address, TRUE, TRUE) == FALSE)
-    {
-        #if defined(DEBUG_VISUAL)
-            Printf("\r\nUnicast Failed\r\n");
-        #endif
-        return UNKNOWN_ERROR;
-    }
-//    else
-    {
-        Printf("\r\nMensaje de Control enviado con exito.\r\n");
-        return NO_ERROR;
-    }
-    return UNKNOWN_ERROR;
+    return i;
+//    miwi_band mb;
+//    switch(ri) {
+//        case MIWI_0434:
+//            #ifndef MIWI_0434_RI
+//                Printf("\r\nError: MiWi at 434 MHz is not available");
+//                return UNAVAILABLE_INTERFACE_ERROR;
+//            #else
+//                mb = ISM_434;
+//            #endif
+//            break;
+//        case MIWI_0868:
+//            #ifndef MIWI_0868_RI
+//                Printf("\r\nError: MiWi at 868 MHz is not available");
+//                return UNAVAILABLE_INTERFACE_ERROR;
+//            #else
+//                mb = ISM_868;
+//            #endif
+//            break;
+//        case MIWI_2400:
+//            #ifndef MIWI_2400_RI
+//                Printf("\r\nError: MiWi at 2,4 GHz is not available");
+//                return UNAVAILABLE_INTERFACE_ERROR;
+//            #else
+//                mb = ISM_2G4;
+//            #endif
+//            break;
+//        case WIFI_2400:
+//            #ifndef WIFI_2400_RI
+//                Printf("\r\nError: WiFi is not available");
+//                return UNAVAILABLE_INTERFACE_ERROR;
+//            #else
+//                //TODO
+//            #endif
+//            break;
+//        case NONE:
+//            //NOP
+//            Printf("\r\nError: NONE of Radio Interfaces were selected to set "
+//                   "its channel");
+//            return INVALID_INTERFACE_ERROR;
+//        case ALL_MIWI:
+//        case ALL:
+//            Printf("\r\nError: Operating Channels of Radio Interfaces must be set"
+//                   " one by one.");
+//            return INVALID_INTERFACE_ERROR;
+//        default:
+//            Printf("\r\nError: Unknown Radio Interface.");
+//            return UNKNOWN_INTERFACE_ERROR;
+//    }
+//    BYTE i;
+//
+//    MiApp_FlushTx(mb); //"Nos situamos en el inicio del buffer de tx de la pila.
+//
+//    for(i = 0; i < TX_BUFFER_SIZE; i++)
+//    {
+//        MiApp_WriteData(Buffer[i], mb); /*Volcamos nuestro buffer al de tx de la
+//                                     pila.*/
+//    }
+//
+//    /*TODO HECHO cambiar el Connection por address y coger el parametro.*/
+////    if (MiApp_UnicastConnection(0, TRUE) == FALSE) /*Realizamos el envío del
+////                                                    buffer de tx de la pila.*/
+//    if (MiApp_UnicastAddress(Address, TRUE, TRUE, mb) == FALSE)
+////    while(MiApp_UnicastAddress(Address, TRUE, TRUE) == FALSE)
+//    {
+//        #if defined(DEBUG_VISUAL)
+//            Printf("\r\nUnicast Failed\r\n");
+//        #endif
+//        return UNKNOWN_ERROR;
+//    }
+////    else
+//    {
+//        Printf("\r\nMensaje de Control enviado con exito.\r\n");
+//        return NO_ERROR;
+//    }
+//    return UNKNOWN_ERROR;
 }
 
 /*******************************************************************************

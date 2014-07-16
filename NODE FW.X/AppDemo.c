@@ -30,13 +30,14 @@ BOOL RecibiendoMssg;
 
 extern RECEIVED_MESSAGE BufferRecepcionPrueba;
 
-//XXX-GuilJa Para el envio de datos de app y de control en paralelo.
+//Para el envio de datos de app y de control en paralelo.
 RECEIVED_MESSAGE AppRXBuffer;
 //    BYTE APPBufferRX[RX_BUFFER_SIZE];//Habia pensado en utilizar otro buffer
                             //distinto al bufferRX pero a priori diria que
                             //no existe conflicto.
-//Jose//BYTE AppDireccion[MY_ADDRESS_LENGTH];
-//XXX-GuilJa
+BYTE AppDireccion[MY_ADDRESS_LENGTH];
+BYTE BufferRx[RX_BUFFER_SIZE];
+//XXX
 
 extern radioInterface ri;
 
@@ -52,8 +53,8 @@ void Rutina_Principal(void)
 
     //Jose//LimpiaBuffer();
     
-    //Jose//AppRXBuffer.Payload = BufferRx;
-    //Jose//AppRXBuffer.SourceAddress = AppDireccion;
+    AppRXBuffer.Payload = BufferRx;
+    AppRXBuffer.SourceAddress = AppDireccion;
     CtrlMssgFlag = FALSE;
     HayDatosApp = FALSE;
     EnviandoMssgApp = FALSE;
@@ -76,6 +77,7 @@ void Rutina_Principal(void)
 
     while(1)
     {
+        //Jose//LimpiaBufferRx();
         VCCMSSGTYPE CabeceraRxMssg;
         RecibiendoMssg = TRUE;
         if(Rcvd_Buffer(&AppRXBuffer))
@@ -207,7 +209,7 @@ BOOL Rcvd_Buffer(RECEIVED_MESSAGE *Buffer)
         return FALSE;
     }
     err = GetRXSourceAddr(ri, Buffer->SourceAddress);
-    if (err) {
+    if (err & 0x80) {
         Printf("\r\nError al obtener la dirección: ");
         PrintChar(err);
         return FALSE;

@@ -110,7 +110,8 @@ BOOL CRM_VCC_Sender(VCC_MSSG_RCVD *Peticion)
 {
     BOOL salida;
     //TODO REVISAR la composicion del mensaje saliente.
-    salida = Send_Buffer(Peticion->Transceiver, Peticion->BufferVCC, Peticion->DirNodDest);
+    salida = Send_Buffer(Peticion->Transceiver, Peticion->BufferVCC,
+            Peticion->DirNodDest, *((BYTE*)(Peticion->Param1)));
     return salida;
 }
 //Fin de funciones de funcionalidad propia del sub-módulo.
