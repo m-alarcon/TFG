@@ -3163,7 +3163,8 @@ BYTE Send_Buffer(radioInterface ri, BYTE *Buffer, BYTE *Address, BYTE sizeOfBuff
         }
     }
     i = SendPckt(ri, LONG_MIWI_ADDRMODE, Address);
-    Printf("\r\nBuffer enviado: ");
+    //Printf("\r\nBuffer enviado: ");
+    Printf("\r\nMensaje de control enviado: ");
     if (i == 0) {
         Printf(" => OK");
     } else {
@@ -4680,16 +4681,16 @@ static BYTE SendMIWI(miwi_band mb, BOOL isBroadcast, BYTE *Address, BOOL isLongA
 
 //        SWDelay(7000);
     }
-
-    void __ISR(_CHANGE_NOTICE_VECTOR, ipl6) _CN_Interrupt_ISR(void){
-        WDTCONCLR = 0x8000;         //Disable WDT, just in case.
-        unsigned int readValue;
-        readValue = ReadBUTTONS();  //Read PORT to clear mismatch condition
-        IFS1CLR = 0x00000001;       //Clear the CN interrupt flag status bit
-        if(((readValue & BUTTON_1_PORT_MASK)==0) && (NodeStatus.flags.bits.NodeAsleep)){
-            IEC1CLR = 0x00000001;   //Disable the CN Interrupt..
-        }
-    }
+//Jose: comento esto porque creo que las rutinas de interrupción deberían ir en HardwareProfile.c
+//    void __ISR(_CHANGE_NOTICE_VECTOR, ipl6) _CN_Interrupt_ISR(void){
+//        WDTCONCLR = 0x8000;         //Disable WDT, just in case.
+//        unsigned int readValue;
+//        readValue = ReadBUTTONS();  //Read PORT to clear mismatch condition
+//        IFS1CLR = 0x00000001;       //Clear the CN interrupt flag status bit
+//        if(((readValue & BUTTON_1_PORT_MASK)==0) && (NodeStatus.flags.bits.NodeAsleep)){
+//            IEC1CLR = 0x00000001;   //Disable the CN Interrupt..
+//        }
+//    }
 ////////////////////////////////////////////////////////////////////////////////
 #endif
 //END OF INTERRUPTION SERVICE ROUTINES /////////////////////////////////////////

@@ -205,7 +205,7 @@ NOACEPTA: //Si no queremos notifcar el no cambio comentariamos y dejaríamos solo
                 CRM_Message(NMM, SubM_Exec, &PeticionCambio);
                 /*Fin del Message para executor.*/
                 char traza[80];
-                sprintf(traza, "\r\nCambiado al canal %d de la interfaz %d.\r\n",
+                sprintf(traza, "\r\n\r\nCambiado al canal %d de la interfaz %d.",
                         GetOpChannel(ri), ri);
                 Printf(traza);
                 /*Creamos la respuesta para el nodo externo y la enviamos.*/
@@ -248,7 +248,7 @@ NOACEPTA: //Si no queremos notifcar el no cambio comentariamos y dejaríamos solo
 
             /***************************FIN VARIABLES**************************/
 
-            Printf("Respuesta recibida al cambio de canal ...");
+            Printf("\r\nRespuesta recibida al cambio de canal ...");
                 /*********MESSAGE CREATION*******/
                 TipoDeSubDato = AdditionalNetNode;
                 IndiceTabla = MiWi_Search4ShortAddress(Peticion->Transceiver, Peticion->EUINodo, Repo_Conn_Table); /*XXX-GuilJa REVISAR
@@ -282,9 +282,9 @@ NOACEPTA: //Si no queremos notifcar el no cambio comentariamos y dejaríamos solo
                 Printf("AFIRMATIVO.\r\n");
                 char Print[80];
                 /*Realizamos el calculo con el param4 que es donde tenemos los datos necesarios.*/
-                sprintf(Print, "\r\nPeticionesEnviadas %d.", PeticionesEnviadas);
-                Printf(Print);
                 PeticionesEnviadas = PeticionesEnviadas + 1;
+                sprintf(Print, "PeticionesEnviadas %d.", PeticionesEnviadas);
+                Printf(Print);
                 PeticionesAceptadas = PeticionesAceptadas + 1;
                 ProbabilidadDeCambio = ((PeticionesAceptadas)*100)/(PeticionesEnviadas);
 
@@ -640,7 +640,7 @@ BOOL CRM_Optm_Int(void)
             Cuentamseg = 0;
 #if defined TEST4 || defined TEST5
 #if defined(NODE_2)//NodoReceptor)
-            Printf("\r\nSe ejecuta la parte reactiva de la estrategia cognitiva.");
+            Printf("\r\n\r\nSe ejecuta la parte reactiva de la estrategia cognitiva.");
             //        t2 = MiWi_TickGet(); //XXX-GuilJa lo llevamos al procesado del test
             //        tT = MiWi_TickGetDiff(t2,t1); //más arriba.
             //        Printf("\r\n");
@@ -657,7 +657,7 @@ BOOL CRM_Optm_Int(void)
 //                    DumpConnection(0xFF); //Para comprobar que hemos cambiado de canal
             return TRUE;
 #elif defined(NODE_1)//NodoEmisor)
-            Printf("\r\nSe ejecuta la parte activa de la estrategia cognitiva.");
+            Printf("\r\n\r\nSe ejecuta la parte activa de la estrategia cognitiva.");
             Test4();
             //        Printf("\r\n");
             //        Printf("El numero de Ticks para el nodo emisor (rutina de optimizacion, envio de mensaje y cambio de canal) :");

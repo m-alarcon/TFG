@@ -59,8 +59,8 @@
 #endif
 //Para ButtonPressed()
 BOOL PUSH_BUTTON_pressed;
-MIWI_TICK PUSH_BUTTON_press_time;
-#define DEBOUNCE_TIME 0x00003FFF
+//MIWI_TICK PUSH_BUTTON_press_time;
+//#define DEBOUNCE_TIME 0x00003FFF
 
 #if defined(__PIC32MX__)
     /* MAX SPI CLOCK FREQ SUPPORTED FOR MIWI TRANSCIEVER */
@@ -530,6 +530,11 @@ void InitCRModule(void){
     le doy maxima subprioridad.*/
     ConfigIntTimer4(T4_INT_ON | T4_INT_PRIOR_3 | T4_INT_SUB_PRIOR_3);
 
+    mCNOpen(CN_ON | CN_IDLE_CON, CN14_ENABLE, CN_PULLUP_DISABLE_ALL);
+    PORTSetPinsDigitalIn(IOPORT_D, BIT_5);
+    mPORTDRead();
+    ConfigIntCN(CHANGE_INT_ON | CHANGE_INT_PRI_3);//6);
+
     CRM_Optm_Init();
     CRM_Poli_Init();
     CRM_AccCtrl_Init();
@@ -574,7 +579,15 @@ void __ISR(_TIMER_4_VECTOR, ipl3)RutinaOptimizer(void)
 }
 /*Fin de la rutina de interrupcion*/
 
-
+void __ISR(_CHANGE_NOTICE_VECTOR, ipl6)IntCN(void)
+{
+    mPORTDRead();
+    //mPORTDRead(); //Vaciar
+    if (BUTTON_1) {
+        PUSH_BUTTON_pressed = TRUE;
+    }
+    mCNClearIntFlag();
+}
 
 /*********************************************************************
  * Function:        BYTE ButtonPressed(void)
@@ -594,42 +607,45 @@ void __ISR(_TIMER_4_VECTOR, ipl3)RutinaOptimizer(void)
  ********************************************************************/
 BYTE ButtonPressed(void)
 {
-    MIWI_TICK tickDifference;
-
-    if(BUTTON_1 == 0)
-    {
-        //if the button was previously not pressed
-        if(PUSH_BUTTON_pressed == FALSE)
-        {
-            PUSH_BUTTON_pressed = TRUE;
-            PUSH_BUTTON_press_time = MiWi_TickGet();
-            return 1;
-        }
+    //Apaño para la demo
+    if (PUSH_BUTTON_pressed) {
+        PUSH_BUTTON_pressed = FALSE;
+        return 2;
+    } else {
+        return 0;
     }
-    else if(BUTTON_2 == 0)
-    {
-        //if the button was previously not pressed
-        if(PUSH_BUTTON_pressed == FALSE)
-        {
-            PUSH_BUTTON_pressed = TRUE;
-            PUSH_BUTTON_press_time = MiWi_TickGet();
-            return 2;
-        }
-    }
-    else
-    {
-        //get the current time
-        MIWI_TICK t = MiWi_TickGet();
-
-        //if the button has been released long enough
-        tickDifference.Val = MiWi_TickGetDiff(t,PUSH_BUTTON_press_time);
-
-        //then we can mark it as not pressed
-        if(tickDifference.Val > DEBOUNCE_TIME)
-        {
-            PUSH_BUTTON_pressed = FALSE;
-        }
-    }
-
-    return 0;
+//    MIWI_TICK tickDifference;
+//    if(BUTTON_1 == 0)
+//    {
+//        //if the button was previously not pressed
+//        if(PUSH_BUTTON_pressed == FALSE)
+//        {
+//            PUSH_BUTTON_pressed = TRUE;
+//            PUSH_BUTTON_press_time = MiWi_TickGet();
+//            return 1;
+//        }
+//    }
+//    else if(BUTTON_2 == 0)
+//    {
+//        //if the button was previously not pressed
+//        if(PUSH_BUTTON_pressed == FALSE)
+//        {
+//            PUSH_BUTTON_pressed = TRUE;
+//            PUSH_BUTTON_press_time = MiWi_TickGet();
+//            return 2;
+//        }
+//    }
+//    else
+//    {
+//        //get the current time
+//        MIWI_TICK t = MiWi_TickGet();
+//        //if the button has been released long enough
+//        tickDifference.Val = MiWi_TickGetDiff(t,PUSH_BUTTON_press_time);
+//        //then we can mark it as not pressed
+//        if(tickDifference.Val > DEBOUNCE_TIME)
+//        {
+//            PUSH_BUTTON_pressed = FALSE;
+//        }
+//    }
+//    return 0;
 }

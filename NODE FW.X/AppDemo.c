@@ -70,11 +70,6 @@ void Rutina_Principal(void)
 
     LED1 = 1;
 
-    Printf("\r\n   Demo Instruction:");
-    Printf("\r\n        Push Button 2 to unicast encrypted message. LED 2 will");
-    Printf("\r\n                     be toggled upon receiving messages. ");
-    Printf("\r\n\r\n");
-
     while(1)
     {
         //Jose//LimpiaBufferRx();
@@ -125,7 +120,7 @@ void Rutina_Principal(void)
                     break;
                 default:
                     //TODO es un mensaje de datos.
-                    Printf("\r\nMensaje recibido: ");
+                    Printf("\r\n\r\nMensaje recibido: ");
                     #if defined DATA_OVER_VCC && defined CRMODULE
                     for(i = 0; i < AppRXBuffer.PayloadSize; i++) {
                         ConsolePut(AppRXBuffer.Payload[i]);
@@ -179,7 +174,7 @@ void Envio_Datos(void)
         }
     }
     i = SendPckt(ri, LONG_MIWI_ADDRMODE, TestAddress);
-    Printf("\r\nPaquete enviado: ");
+    Printf("\r\n\r\nMensaje de datos enviado: ");
     if (i == 0) {
         Printf(" => OK");
     } else {
