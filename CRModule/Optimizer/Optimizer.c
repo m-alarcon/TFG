@@ -204,9 +204,15 @@ NOACEPTA: //Si no queremos notifcar el no cambio comentariamos y dejaríamos solo
                     /*********FIN MESSAGE CREATION*******/
                 CRM_Message(NMM, SubM_Exec, &PeticionCambio);
                 /*Fin del Message para executor.*/
+                WORD riname;
+                switch (ri) {
+                    case MIWI_0434: riname = 434; break;
+                    case MIWI_0868: riname = 868; break;
+                    case MIWI_2400: riname = 2400; break;
+                }
                 char traza[80];
                 sprintf(traza, "\r\n\r\nCambiado al canal %d de la interfaz %d.",
-                        GetOpChannel(ri), ri);
+                        GetOpChannel(ri), riname);
                 Printf(traza);
                 /*Creamos la respuesta para el nodo externo y la enviamos.*/
                     /*********MESSAGE CREATION*******/
@@ -418,9 +424,15 @@ BOOL CRM_Optm_GameTheory(OPTM_MSSG_RCVD *Peticion)
 
                     CRM_Message(NMM, SubM_Exec, &PeticionExecTest2);//envio del messg.
                 /*Fin del Message para Executor.*/
+                WORD riname;
+                switch (ri) {
+                    case MIWI_0434: riname = 434; break;
+                    case MIWI_0868: riname = 868; break;
+                    case MIWI_2400: riname = 2400; break;
+                }
                 char traza[80];
                 sprintf(traza, "\r\nCambiado al canal %d de la interfaz %d y enviada "
-                        "la peticion al otro nodo.\r\n", GetOpChannel(Peticion->Transceiver), ri);
+                        "la peticion al otro nodo.\r\n", GetOpChannel(Peticion->Transceiver), riname);
                 Printf(traza);
 
                     //TODO. Actualizar la probabilidad de cambio.
