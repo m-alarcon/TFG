@@ -23,15 +23,17 @@
  *****************************************************************************/
 
 #include "DataClustering.h"
-//TODO crear contador para establecer el tiempo de aprendizaje
-//TODO crear contador para contar el tiempo entre paquetes
-long t0 = GetSystemClock();
-long learningTime = 30000;
+//TODO crear timer para establecer el tiempo de aprendizaje
+//TODO crear timer para contar el tiempo entre paquetes
+int learningTimeMax = 2040000;
+int learningTime = 0;
+int t0 = 0;
 BYTE *RSSI;
 BYTE pruebaRSSI = 0;
 double initRad = 0.3;
 int tiempoMax;
 BYTE potenciaMax;
+int aprendizaje = 0;
 int normalizado = 0;
 
 int nClusters = 0;
@@ -44,12 +46,10 @@ coord p1;
 coord p2;
 
 void DataClustering(void){
-    while ( 1/*GetSystemClock() < learningTime*/ ){ //El getsystemclock no funciona con ese learningTime
+    if (aprendizaje == 0){
         coord paquete = CalculoCoordenadas();
-        if(paquete.RSSI != 0){          //Hay un paquete
-            //Recogida de datos
+        if(paquete.RSSI != 0){
             if (paquetesRecibidos == 0){
-                //Guardar la coordenada en una lista
                 Lista_Paq_Rec_Aprendizaje[paquetesRecibidos] = paquete;
                 paquetesRecibidos++;
             } else {
@@ -63,10 +63,19 @@ void DataClustering(void){
         } else {
             //No hace nada
         }
+    } else {
+        if(normalizado == 0) NormalizarCoordenadas();
+
+        //Por cada paquete que se reciba, comprobar que pertenece a algun cluster
+        //y si no marcar como atacante y mandar mensaje a los demas nodos.
+        hayAtacante();
     }
+}
 
-    if(normalizado == 0) NormalizarCoordenadas();
-
+void initTimers(){
+    WORD T5_TICK = (CLOCK_FREQ/8/8/34000);
+    OpenTimer5(T5_ON | T5_IDLE_CON | T5_GATE_OFF | T5_PS_1_8 | T5_SOURCE_INT, T5_TICK);
+    ConfigIntTimer5(T5_INT_ON | T5_INT_PRIOR_7);
 }
 
 //Calculo coordenadas ultimo paquete
@@ -81,9 +90,8 @@ coord CalculoCoordenadas(){
     coord coordenadas;
     extern radioInterface ri;
     if ( paquetesRecibidos == 0 && GetRSSI(ri,RSSI) == 0 ){  //Si es correcto el valor de RSSI y es el primer dato
-        t1 = GetSystemClock();
-        tiempoPaquete = t1-t0;      //Va a sobrar
-        t0 = t1;                    //Va a sobrar
+        tiempoPaquete = learningTime;
+        t0 = learningTime; //Para el tiempo del proximo paquete
         tiempoMax = tiempoPaquete;
         potenciaMax = *RSSI;
         coordenadas.tiempo = tiempoPaquete;
@@ -91,14 +99,12 @@ coord CalculoCoordenadas(){
         return coordenadas;
     } else {
         *RSSI1 = *RSSI;
-        if ( paquetesRecibidos > 0 && GetRSSI(ri,RSSI) == 0 && *RSSI1 != *RSSI){   //Ha habido un nuevo paquete
-            t1 = GetSystemClock();      //Si hago yo el contador lo reinicio cada vez
-                                        //que llegue un paquete por tanto el tiempo de paquete
-                                        //es el tiempo que se ha calculado en el contador
-            tiempoPaquete = t1-t0;      //Va a sobrar
-            t0 = t1;                    //Va a sobrar
+        if ( paquetesRecibidos > 0 && GetRSSI(ri,RSSI) == 0 && *RSSI1 != *RSSI){
+            t1 = learningTime;
+            tiempoPaquete = t1 - t0;
             if(t0 > tiempoMax) tiempoMax = t0;
             if(*RSSI > potenciaMax) potenciaMax = *RSSI;
+            t0 = t1;
 
             coordenadas.tiempo = tiempoPaquete;
             coordenadas.RSSI = *RSSI;
@@ -112,11 +118,8 @@ coord CalculoCoordenadas(){
 }
 
 void NormalizarCoordenadas(){
-    /*Bucle que recorre todas las coordenadas calculadas y las normaliza con
-     * respecto al maximo */
-    if(nClusters == 0){
+     if(nClusters == 0){
         int i;
-        //Normalizar coordenadas
         for(i = 0; i <= paquetesRecibidos; i++){
             Lista_Paq_Rec_Aprendizaje[i].RSSI = Lista_Paq_Rec_Aprendizaje[i].RSSI/potenciaMax;
             Lista_Paq_Rec_Aprendizaje[i].tiempo = Lista_Paq_Rec_Aprendizaje[i].tiempo/tiempoMax;
@@ -165,4 +168,22 @@ double CalculoDistancia(coord pto1, coord pto2){
 
 void hayAtacante(){
 
+}
+
+/*******************************************************************************
+ * Function:    IntTmp()
+ * Input:       None.
+ * Output:      None.
+ * Overview:    Timer interruption routine.
+ * Si ha terminado el tiempo de aprendizaje se para el timer.
+ ******************************************************************************/
+void __ISR(_TIMER_5_VECTOR, ipl7)IntTmp(void) {
+
+    mT5ClearIntFlag();
+
+    learningTime++;
+    if (learningTime == 2040000){
+        aprendizaje = 1;
+        ConfigIntTimer5(T5_INT_OFF | T5_INT_PRIOR_7);
+    }
 }
