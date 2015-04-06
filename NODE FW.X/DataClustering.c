@@ -44,7 +44,7 @@ coord p1;
 coord p2;
 
 void DataClustering(void){
-    while ( 1/*GetSystemClock() < learningTime*/ ){ //El getsystemclock no funciona
+    while ( 1/*GetSystemClock() < learningTime*/ ){ //El getsystemclock no funciona con ese learningTime
         coord paquete = CalculoCoordenadas();
         if(paquete.RSSI != 0){          //Hay un paquete
             //Recogida de datos
@@ -62,21 +62,10 @@ void DataClustering(void){
             }
         } else {
             //No hace nada
-
-            //Printf("\r\nNo hay paquetes");
-            /*
-            *p1.RSSI = 0;
-            p1.tiempo = 0;
-            *p2.RSSI = 1;
-            p2.tiempo = 1;
-            double dist = CalculoDistancia(p1, p2);
-            PrintDec(dist);
-            Printf("\r\n");
-             */
         }
     }
 
-//    if(normalizado == 0) NormalizarCoordenadas();
+    if(normalizado == 0) NormalizarCoordenadas();
 
 }
 
@@ -145,18 +134,20 @@ void CalculoClusters(){
         Lista_Clusters[0].nMuestras = 1;
         nClusters++;
     } else {
-        for(i = 1; i <= paquetesRecibidos; i++){
+        for(i = 1; i <= paquetesRecibidos; i++){ //Puede salirse del array y ser solo i < paq...
             for(j = 0; j < nClusters; j++){
-                if(CalculoDistancia(Lista_Clusters[j].centro,Lista_Paq_Rec_Aprendizaje[i]) <= Lista_Clusters[j].radio){
-                    //TODO calcular nuevo centro y nuevo radio y sumar 1 a nMuestras
+                double distancia = CalculoDistancia(Lista_Clusters[j].centro,Lista_Paq_Rec_Aprendizaje[i]);
+                if( distancia <= Lista_Clusters[j].radio){
+                    Lista_Clusters[j].radio += distancia;
+                    Lista_Clusters[j].centro.RSSI = ((Lista_Clusters[j].centro.RSSI * Lista_Clusters[j].nMuestras) + Lista_Paq_Rec_Aprendizaje[i].RSSI)/(Lista_Clusters[j].nMuestras + 1);
+                    Lista_Clusters[j].centro.tiempo = ((Lista_Clusters[j].centro.tiempo * Lista_Clusters[j].nMuestras) + Lista_Paq_Rec_Aprendizaje[i].tiempo)/(Lista_Clusters[j].nMuestras + 1);
+                    Lista_Clusters[j].nMuestras++;
+                } else {
+                    Lista_Clusters[j+1].centro = Lista_Paq_Rec_Aprendizaje[i];
+                    Lista_Clusters[j+1].radio = initRad;
+                    Lista_Clusters[j+1].nMuestras = 1;
                     nClusters++;
                 }
-            }
-            if(CalculoDistancia(Lista_Clusters[j].centro,Lista_Paq_Rec_Aprendizaje[i]) > Lista_Clusters[j].radio){
-                Lista_Clusters[j+1].centro = Lista_Paq_Rec_Aprendizaje[i];
-                Lista_Clusters[j+1].radio = initRad;
-                Lista_Clusters[j+1].nMuestras = 1;
-                nClusters++;
             }
         }
     }
@@ -164,10 +155,14 @@ void CalculoClusters(){
 
 double CalculoDistancia(coord pto1, coord pto2){
     double distancia;
-    BYTE *pto1Pr = pto1.RSSI;   //No se si asi es correcto
+    BYTE pto1Pr = pto1.RSSI;
     long pto1t = pto1.tiempo;
-    BYTE *pto2Pr = pto2.RSSI;
+    BYTE pto2Pr = pto2.RSSI;
     long pto2t = pto2.tiempo;
     distancia = sqrt (pow(pto2Pr-pto1Pr, 2) + pow(pto2t-pto1t, 2));
     return distancia;
+}
+
+void hayAtacante(){
+
 }
