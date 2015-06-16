@@ -449,6 +449,7 @@ void BoardInit(void){
             IEC0SET = 0x00000010;   //Set T1IE
             //Timer will be triggered after initialization.
         #endif
+
 //************************************* TODO
     // IOPORT CN - For waking up the node manually. --------------------------//
         mPORTDSetPinsDigitalIn(BIT_5); // CN14
@@ -518,7 +519,7 @@ void WriteStringPC(const char *string){
  * Overview:    Configuration and initialization of CRModule.
  * Note:        This routine needs to be called after initialising MiWi stack.
  ******************************************************************************/
-#if defined(CRMODULE)
+#if defined CRMODULE
 void InitCRModule(void){
     WORD TiempoT4 = 1; //En mseg;
     WORD Prescaler = 32; //Selecciono el prescaler, si lo
@@ -571,6 +572,20 @@ void __ISR(_TIMER_4_VECTOR, ipl3)RutinaOptimizer(void)
     #endif
     /*Espacio reservado para que el usuario invoque, si lo desea, a funciones
      que quiera ejectuar periodicamente con interrupcion del timer.*/
+        BYTE TestAddress[MY_ADDRESS_LENGTH];
+        TestAddress[0] = 0x00;
+        TestAddress[1] = 0x11;
+        TestAddress[2] = 0x22;
+        TestAddress[3] = 0x33;
+        TestAddress[4] = 0x44;
+        TestAddress[5] = 0x55;
+        TestAddress[6] = 0x66;
+        #if defined NODE_1
+            TestAddress[7] = 0x22;
+        #elif defined NODE_2
+            TestAddress[7] = 0x11;//Dirección del nodo 1
+        #endif
+        Enviar_Paquete_Datos_App(MIWI_2400, BROADCAST_ADDRMODE, TestAddress);
 
     /*Fin del espacio reservado*/
 

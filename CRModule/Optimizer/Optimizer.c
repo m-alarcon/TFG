@@ -28,6 +28,7 @@
 /*****************************************************************************/
 /*********************************VARIABLES***********************************/
 /*****************************************************************************/
+
 //Para configurar cada cuanto tiempo realiza su rutina de ejecucion Optimizer,
 //que recordemos que es la rutina de ejecucion periodica y principal del modulo
 //cognitivo.
@@ -41,28 +42,26 @@ extern BOOL EnviandoMssgApp;/*Para  la preuba de que mientras se envían datos
                              tocar registros conflictivos. Ver enviodatos.c*/
 extern BOOL RecibiendoMssg;/*PArecido a lo de arriba.*/
 
-#if defined(TEST4)
+//#if defined(TEST4)
 BYTE BufferPrueba[RX_BUFFER_SIZE];
 BYTE Direccion[MY_ADDRESS_LENGTH];
 RECEIVED_MESSAGE BufferRecepcionPrueba;
 VCC_MSSG_RCVD PeticionRecepcion; //La del VCC
 OPTM_MSSG_RCVD PeticionTest2; //La del Optmizer
+//#endif
 
-#endif
 #if defined TEST5
     MIWI_TICK t1G, t2G;
     DWORD_VAL tTG;
 #endif
-#if defined TEST6
+
+//#if defined TEST6
     OPTSTATMACH OptmEstado;
     WORD MilisDeTimeOut;
-
     BYTE PeticionesEnviadas;
     BYTE PeticionesAceptadas;
     WORD ProbabilidadDeCambio;
-
-
-#endif
+//#endif
 
 extern radioInterface ri;
 
@@ -88,6 +87,11 @@ extern radioInterface ri;
     WORD ProbChngPropia;
     //Fin de optimizer de Elena.
 
+    BYTE MSSG_PROC_OPTM = 0;
+    BYTE n_msg = 2; /*Numero de mensajes necesarios para cambiar de canal. Cambiar con el número que sea realmente*/
+    BYTE CosteCambio, CosteOcupado, CosteNoCambio;
+    BYTE EstadoGT;
+
 /*****************************************************************************/
 /******************************FIN DE VARIABLES*******************************/
 /*****************************************************************************/
@@ -108,6 +112,9 @@ BOOL CRM_Optm_Mssg_Rcvd(OPTM_MSSG_RCVD *Peticion)
 //#endif
         case(ActProcRq):
             CRM_Optm_Processor(Peticion);
+            break;
+        case(ActCons):
+            CRM_Optm_Cons(Peticion);
             break;
         default:
             break;
@@ -612,16 +619,237 @@ BOOL CRM_Optm_Task(TASKPARAM Opcion)
 }
 /*Fin de rutina de tareas generales del sub-modulo*/
 
+BOOL CRM_Optm_Incluir_Potencia(BYTE *pVector){
+    
+    BYTE RSSI,i;
+    BYTE *pRSSI = &RSSI;
+    if (MSSG_PROC_OPTM == 0){
+        if(GetRSSI(ri,pRSSI) == 0){
+            for(i = MAX_VECTOR_POTENCIA-1; i >= 0; i--){
+                if(i > 0){
+                    *(pVector+i) = *(pVector+i-1);
+                } else {
+                    *(pVector) = *(pRSSI);
+                }
+            }
+        }
+        MSSG_PROC_OPTM = 1;
+
+        //Creo el mensaje para repository y se lo mando
+        REPO_MSSG_RCVD PeticionRepoPotencias;
+        BYTE potencias[MAX_VECTOR_POTENCIA];
+        REPODATATYPE PetPotencia = IncluirPotencia;
+        PeticionRepoPotencias.Action = ActStr;
+        PeticionRepoPotencias.DataType = PetPotencia;
+        PeticionRepoPotencias.Param1 = &PetPotencia;
+        PeticionRepoPotencias.Param2 = pRSSI;
+
+        CRM_Message(NMM, SubM_Repo, &PeticionRepoPotencias);
+
+        return TRUE;
+    } else {
+
+    }
+    return FALSE;
+}
+
+BOOL CRM_Optm_Inicio_GT(BYTE *pVector){
+
+    BOOL inicio;
+    BYTE i,s,n,media;
+    n = 0;
+    s = 0;
+    for(i = 0; i < MAX_VECTOR_POTENCIA; i++){
+        s += *pVector;
+        n++;
+    }
+    media = s/n;
+    if(media < UMBRAL_POTENCIA){
+        inicio = TRUE;
+    } else {
+        inicio = FALSE;
+    }
+    return inicio;
+
+}
+
+/*Devuelve si se decide cambiar de canal o quedarse en el que está*/
+BOOL CRM_Optm_Calcular_Costes(BYTE n_rtx){
+    //El CosteNoCambio siempre va a ser mayor o igual que el CosteOcupado. Lo calculo pero al decidir
+    //si cambio o no, no lo tengo en cuenta.
+    BOOL cambio;
+    CosteCambio = CosteSensing + ((CosteTx + CosteRx) * n_msg);
+    CosteOcupado = CosteTx * n_rtx;
+    CosteNoCambio = CosteTx * MaxRTx;
+    if (CosteCambio < CosteOcupado){
+        cambio = TRUE;
+    } else {
+        cambio = FALSE;
+    }
+    return cambio;
+
+}
+
+BOOL CRM_Optm_Cons(OPTM_MSSG_RCVD *Peticion){
+
+    BOOL inicioCambio = FALSE;
+    BOOL cambioCanal = FALSE;
+    BYTE n_rtx, i;
+    REPO_MSSG_RCVD PeticionRepoPotencias;
+    BYTE potencias[MAX_VECTOR_POTENCIA];
+    REPO_MSSG_RCVD PeticionRepoRTx;
+    BYTE num_RTx;
+    BYTE *pPotencias = &potencias[0];
+    BYTE canal = GetOpChannel(ri);
+
+    switch (Peticion->Action)
+    {
+        case(SubActCambio):
+
+            //Pedir a repo el vector de potencias y el numero de retransmisiones en el canal actual
+            PeticionRepoPotencias.Action = ActSndDta;
+            PeticionRepoPotencias.DataType = EnvPotencias;
+            PeticionRepoPotencias.Param1 = pPotencias;
+
+            CRM_Message(NMM, SubM_Repo, &PeticionRepoPotencias);
+
+            PeticionRepoRTx.Action = ActSndDta;
+            PeticionRepoRTx.DataType = EnvRTx;
+            PeticionRepoRTx.Param1 = &canal;
+
+            CRM_Message(NMM, SubM_Repo, &PeticionRepoRTx);
+
+            /*Realiza el calculo de la estrategia de optimizacion.*/
+            inicioCambio = CRM_Optm_Inicio_GT(pPotencias);
+            if(inicioCambio){
+                cambioCanal = CRM_Optm_Calcular_Costes(num_RTx);
+            }
+
+            if(cambioCanal)
+            {
+                /*Primero calculamos el canal optimo para el cambio.*/
+                    //Creamos unos parametros para un mensaje para Discovery.
+                    //Para cada una de las interfaces:
+                    BYTE CanalOptimo, CanalOptimo434, CanalOptimo868, CanalOptimo2400;
+                    DWORD TodosCanales = 0xFFFFFFFF;
+                    BYTE TiempoScan = 5;
+                    BYTE TipoScan = NOISE_DETECT_ENERGY;
+                    //Para cada una de las interfaces:
+                    BYTE RSSIResultado434 = 255;
+                    BYTE RSSIResultado868 = 255;
+                    BYTE RSSIResultado2400 = 255;
+                    //Creacion de un mensaje de discovery.
+                    DISC_MSSG_RCVD PeticionDiscCOpt;
+                    PeticionDiscCOpt.OrgModule = SubM_Opt;
+                    PeticionDiscCOpt.Action = ActSignDetc;
+                    PeticionDiscCOpt.Param1 = &TodosCanales;
+                    PeticionDiscCOpt.Param2 = &TiempoScan;
+                    PeticionDiscCOpt.Param3 = &TipoScan; //NOISE DETECT ENERGY.
+
+                    //Ahora calculo el canal óptimo de cada interfaz y el canal más óptimo de todos:
+                    #ifdef MIWI_0434_RI
+                    PeticionDiscCOpt.Transceiver = MIWI_0434;
+                    PeticionDiscCOpt.Param4 = &RSSIResultado434;
+                    CanalOptimo434 = *(BYTE*)CRM_Message(NMM, SubM_Disc, &PeticionDiscCOpt);
+                    #endif
+                    #ifdef MIWI_0868_RI
+                    PeticionDiscCOpt.Transceiver = MIWI_0868;
+                    PeticionDiscCOpt.Param4 = &RSSIResultado868;
+                    CanalOptimo868 = *(BYTE*)CRM_Message(NMM, SubM_Disc, &PeticionDiscCOpt);
+                    #endif
+                    #ifdef MIWI_2400_RI
+                    PeticionDiscCOpt.Transceiver = MIWI_2400;
+                    PeticionDiscCOpt.Param4 = &RSSIResultado2400;
+                    CanalOptimo2400 = *(BYTE*)CRM_Message(NMM, SubM_Disc, &PeticionDiscCOpt);
+                    #endif
+                    if ((RSSIResultado434 <= RSSIResultado868) && (RSSIResultado434 <= RSSIResultado2400)) {
+                        CanalOptimo = CanalOptimo434;
+                        ri = MIWI_0434;
+                    } else if ((RSSIResultado868 < RSSIResultado434) && (RSSIResultado868 <= RSSIResultado2400)) {
+                        CanalOptimo = CanalOptimo868;
+                        ri = MIWI_0868;
+                    } else {
+                        CanalOptimo = CanalOptimo2400;
+                        ri = MIWI_2400;
+                    }
+
+                    //Mandar la información del cambio de canal al resto de nodos.
+                    BYTE MensajeVCC[] = {RSSIResultado434, RSSIResultado868, RSSIResultado2400, CanalOptimo, ri};
+                    #if defined NODE_1
+                        BYTE DireccionNodoDestino[] = {EUI_0, EUI_1, EUI_2, EUI_3, EUI_4, EUI_5, EUI_6 , 0x22};
+                    #elif defined NODE_2
+                        BYTE DireccionNodoDestino[] = {EUI_0, EUI_1, EUI_2, EUI_3, EUI_4, EUI_5, EUI_6 , 0x11};
+                    #endif
+                    MSN_MSSG_RCVD PeticionCambioCanal;
+                    VCC_MSSG_RCVD PeticionVCCCambioCanal;
+
+                    PeticionVCCCambioCanal.Action = ActSend;
+                    PeticionVCCCambioCanal.BufferVCC = MensajeVCC;
+                    PeticionVCCCambioCanal.DirNodDest = DireccionNodoDestino;
+                    PeticionVCCCambioCanal.Transceiver = Peticion->Transceiver;
+                    BYTE sizeBufferVCC = 27;
+                    PeticionVCCCambioCanal.Param1 = &sizeBufferVCC;
+
+                    PeticionCambioCanal.Peticion_Destino.PeticionVCC = &PeticionVCCCambioCanal;
+
+                    CRM_Message(VCC, SubM_Ext, &PeticionCambioCanal);
+
+                    EstadoGT = EsperandoDecisionRestoNodos;
+            }
+        case(SubActProcInfo):
+            //Comprobar el EstadoGT y serían mensajes recibidos de otros nodos
+            break;
+
+    }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 /*La rutina propia de ejecución en forma de una interrupción para que ocurra
  de forma periodica (sujeto a que otras interrupciones puedan retrasarla en
  funcion de la prioridad que tengan).*/
 BOOL CRM_Optm_Int(void)
 {
+
+    //Cada vez que entramos incluimos la potencia del paquete que hemos recibido
+    REPO_MSSG_RCVD PeticionRepoPotencias;
+    BYTE potencias[MAX_VECTOR_POTENCIA];
+    BYTE *pPotencias = &potencias[0];
+    PeticionRepoPotencias.Action = ActSndDta;
+    PeticionRepoPotencias.DataType = EnvPotencias;
+    PeticionRepoPotencias.Param1 = pPotencias;
+
+    CRM_Message(NMM, SubM_Repo, &PeticionRepoPotencias);
+
+    BOOL i = CRM_Optm_Incluir_Potencia(pPotencias);
+    if (i == FALSE){
+        Printf("\r\nHa habido un error al incluir la potencia del último paquete");
+    }
+
 #if defined(TEST5)
     t1G = MiWi_TickGet(); //Cada vez que entra se guarda en t1 el tiempo.
 #endif
 //    if(!RecibiendoMssg && !EnviandoMssgApp)
-        CRM_VCC_Mssg_Rcvd(&PeticionRecepcion);
+        CRM_VCC_Mssg_Rcvd(&PeticionRecepcion); //Esto va a enviar o recibir los mensajes de VCC
 
 #if defined TEST6
 #if defined (NODE_1)//NodoEmisor)
@@ -668,7 +896,7 @@ BOOL CRM_Optm_Int(void)
             //        tT.Val = 0xFFFFFFFF; //Por si a la siguiente no hemos entrado en el procesador.
 //                    DumpConnection(0xFF); //Para comprobar que hemos cambiado de canal
             return TRUE;
-#elif defined(NODE_1)//NodoEmisor)
+#elif defined(NODE_1)//NodoEmisor
             Printf("\r\n\r\nSe ejecuta la parte activa de la estrategia cognitiva.");
             Test4();
             //        Printf("\r\n");
@@ -694,12 +922,36 @@ BOOL CRM_Optm_Int(void)
             //TODO aqui deben ir las llamadas a las funciones que deba ejecutar el
             //optimizer.
 
+    //Aquí llamo a la función de la teoría de juegos que se encarga de ver si hay
+    //que cambiar de canal o no y de hacer todo el proceso del algoritmo.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
         }
 
     }
     return FALSE;
 }
 
+#if defined TEST3
 //TEST2-BORRABLE
 /*Solo util para realizar el test2*/
 //Estamos intentando simular una situacion en la que optimizer solicita una 
@@ -729,6 +981,7 @@ BYTE Test2(void)
 
     DumpConnection(0xFF);//Para comprobar que hemos cambiado de canal
 }
+#endif
 /*Fin de la funcion para el test2*/
 
 #if defined(TEST4)

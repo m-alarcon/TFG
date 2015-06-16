@@ -79,6 +79,9 @@ BOOL CRM_Repo_Store(REPO_MSSG_RCVD *Peticion)
         case(Enviro):
             CRM_Repo_Env(*(BYTE*)((*Peticion).Param1), *(BYTE*)((*Peticion).Param2));
             break;
+        case(IncluirPotencia):
+            CRM_Repo_NodoPropio(Peticion);
+            break;
         default:
             break;
     }
@@ -119,6 +122,23 @@ BOOL CRM_Repo_SendDat(REPO_MSSG_RCVD *Peticion)
         case Enviro:
             break;
         case AllInfo:
+            break;
+        case EnvPotencias:
+            Peticion->Param2 = vectorPotencias;
+            break;
+        case EnvRTx:
+            switch(ri)
+            {
+                case MIWI_0434:
+                    Peticion->Param2 = &MIWI434_rtx[*((BYTE*) (Peticion->Param1))];
+                    break;
+                case MIWI_0868:
+                    Peticion->Param2 = &MIWI868_rtx[*((BYTE*) (Peticion->Param1))];
+                    break;
+                case MIWI_2400:
+                    Peticion->Param2 = &MIWI2400_rtx[*((BYTE*) (Peticion->Param1))];
+                    break;
+            }
             break;
         default:
             break;
@@ -223,6 +243,11 @@ void CRM_Repo_NodoPropio(REPO_MSSG_RCVD *Peticion)
             break;
         case 0x05:
             break;
+        case IncluirPotencia:
+            for (i = 0; i < MAX_VECTOR_POTENCIA; i++){
+                vectorPotencias[i] = *(&(*((BYTE*) (Peticion->Param2))) + i);
+            }
+            break;
         default:
             break;
     }
@@ -318,6 +343,10 @@ void CRM_Repo_Env(BYTE canal, BYTE InfoRSSI)
     /*Fin info de la hora*/
 }
 
+void CRM_Repo_NRTx(BYTE n_rtx, BYTE canal, radioInterface ri){
+    
+}
+
 //PRUEBA TEST5
 void CRM_Repo_ProbCambio(BYTE Valor)
 {
@@ -345,6 +374,30 @@ BOOL CRM_Repo_Init(void)
     /*Fin de la tabla de conexiones.*/
 
     NumeroDePeticionesDeCambio = NumeroDePeticionesInicial;
+
+    /*Inicialización vector potencias*/
+    for (i = 0; i < MAX_VECTOR_POTENCIA; i++){
+        vectorPotencias[i] = 0xFF;
+    }
+
+    /*Inicialización tablas de retransmisiones*/
+    #ifdef MIWI_0434_RI
+    for(i = 0; i < MIWI0434NumChannels; i++){
+        MIWI434_rtx[i] = 0;
+    }
+    #endif
+    #ifdef MIWI_0868_RI
+    for(i = 0; i < MIWI0868NumChannels; i++){
+        MIWI868_rtx[i] = 0;
+    }
+    #endif
+    #ifdef MIWI_2400_RI
+    for(i = 0; i < MIWI2400NumChannels; i++){
+        MIWI2400_rtx[i] = 0;
+    }
+    #endif
+
+
     return TRUE;
 }
 /*Fin de las funciones de inicializacion*/

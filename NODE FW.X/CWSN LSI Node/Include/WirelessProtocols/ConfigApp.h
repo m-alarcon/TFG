@@ -39,8 +39,8 @@
 //------------- CONFIGURATION FOR LSI-CWSN NodeTest APP. CODE ----------------//
 //----------------------------------------------------------------------------//
 //Select only one of these...
-#define NODE_1      //TX role in App. code - node 1. Sets EUI_testA address.
-//#define NODE_2      //RX role in App. code - node 2. Sets EUI_testB address.
+//#define NODE_1      //TX role in App. code - node 1. Sets EUI_testA address.
+#define NODE_2      //RX role in App. code - node 2. Sets EUI_testB address.
 //#define NODE_NOP    //Dummy role - It only joins the network at the beginning
                     //and does stacks maintenance tasks. Sets EUI_testC address.
     //#define NOP_JOINS_AND_LEAVES_LOOP     //Provisional, debugging!
@@ -49,9 +49,9 @@
 //Para CRModule
 #define CRMODULE
 #define DATA_OVER_VCC
-#define TEST4
-#define TEST5
-#define TEST6
+//#define TEST4
+//#define TEST5
+//#define TEST6
 
 //----------------------------------------------------------------------------//
 //------ CONFIGURATION OF MIWI STACK AND MIWI TRANSCEIVERS FOR THE NODE ------//
@@ -85,7 +85,7 @@
             // specifies that the node has the capability to be an end device.
             // This definition cannot be defined with NWK_ROLE_COORDINATOR.
             /******************************************************************/
-            #define NWK_ROLE_END_DEVICE
+            //#define NWK_ROLE_END_DEVICE
 
             /******************************************************************/
             // NWK_ROLE_COORDINATOR is not valid if PROTOCOL_P2P is defined. It

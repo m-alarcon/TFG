@@ -46,7 +46,7 @@ typedef enum _REPACTION
 
 typedef enum _REPODATATYPE
 {
-    OwnNode = 0x01, NetNode, EnvNode, Enviro, AllInfo = 0x10
+    OwnNode = 0x01, NetNode, EnvNode, Enviro, EnvPotencias, IncluirPotencia, EnvRTx, AllInfo = 0x10
 } REPODATATYPE;
 
 /*Los sub-tipos de datos para cada tipo de dato*/
@@ -95,6 +95,41 @@ typedef struct _REPO_MSSG_RCVD
 //REVISAR deberia ir en el .c o nos interesa que pueda utilizarlas otro
 //sub-modulo??.
 
+
+typedef struct coordenadas {
+    double RSSI;
+    double tiempo;
+} coord;
+
+typedef struct cluster {
+    coord centro;
+    double radio;
+    int nMuestras;
+} cl;
+
+typedef struct atacantes {
+    BYTE direccionAtacante[MY_ADDRESS_LENGTH];
+    BYTE direccionDetector[MY_ADDRESS_LENGTH];
+    BYTE esAtacante;
+} at;
+
+
+extern radioInterface ri;
+
+coord Lista_Paq_Rec_Aprendizaje[MAX_PAQ_APRENDIZAJE];
+cl Lista_Clusters[MAX_CLUSTERS];
+at Tabla_Atacantes[(CONNECTION_SIZE+1)*(CONNECTION_SIZE+1)];
+
+BYTE MIWI434_rtx[MIWI0434NumChannels];
+BYTE MIWI868_rtx[MIWI0868NumChannels];
+BYTE MIWI2400_rtx[MIWI2400NumChannels];
+
+BYTE MIWI434_RSSI_values[MIWI0434NumChannels];
+BYTE MIWI868_RSSI_values[MIWI0868NumChannels];
+BYTE MIWI2400_RSSI_values[MIWI2400NumChannels];
+
+BYTE CanalOptimo;
+
 /*Del Propio nodo*/
     //La direccion larga.
     extern BYTE myLongAddress[MY_ADDRESS_LENGTH]; //esta en MiWi.c REVISAR que
@@ -128,6 +163,8 @@ typedef struct _REPO_MSSG_RCVD
         //TODO numero total de bytes recibidos.
         //Informacion relativa a la optimizacion.
         //Informacion relativa a la bateria.
+
+    BYTE vectorPotencias[MAX_VECTOR_POTENCIA];
 
 /*Del resto de nodos de la red*/
 CONNECTION_ENTRY Repo_Conn_Table[CONNECTION_SIZE]; //Con quien esta 

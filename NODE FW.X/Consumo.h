@@ -5,7 +5,7 @@
  *****************************************************************************
  *
  * Author:          malarcon
- * FileName:        DataClustering.h
+ * FileName:        Consumo.h
  * Dependencies:
  * Processor:
  * BOARD:
@@ -26,28 +26,29 @@
 #include "CWSN LSI Node/Include/NodeHAL.h"
 #include "CWSN LSI Node/Include/WirelessProtocols/Console.h"
 #include "CWSN LSI Node/Include/WirelessProtocols/ConfigApp.h"
-
 #include "CRModule/CRModule.h"
 #include "CRModule/VCC/VCC.h"
-#include "Consumo.h"
-#include <math.h>
 
-#ifndef DATACLUSTERING_H
-#define	DATACLUSTERING_H
+#ifndef CONSUMO_H
+#define	CONSUMO_H
 
 //Cambiar según necesidades
 
 
-void DataClustering(void);
-coord CalculoCoordenadas();
-void NormalizarCoordenadas();
-void CalculoClusters();
-void inicializarTablaAtacantes();
-double CalculoDistancia(coord pto1, coord pto2);
-BYTE* hayAtacante();
-void Envio_Datos_Atacantes(at data);
-void Recibir_info(void);
-void Enviar_Paquete_Datos(BYTE addrmode, BYTE *addr);
 
-#endif	/* DATACLUSTERING_H */
+
+typedef struct mensCambio {
+    BYTE chOpt;
+    BYTE potCanales[MIWI2400NumChannels];
+} msgChng;
+
+BYTE canal;
+BOOL recPaqCambioCanal;
+msgChng paqRec;
+
+void Consumo(void);
+BYTE CalcularMedia(BYTE *pVector);
+BOOL CalcularCostes();
+
+#endif	/* CONSUMO_H */
 

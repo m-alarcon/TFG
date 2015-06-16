@@ -133,6 +133,10 @@
       <itemPath>CWSN LSI Node/NodeHAL.c</itemPath>
       <itemPath>DataClustering.c</itemPath>
       <itemPath>DataClustering.h</itemPath>
+      <itemPath>Consumo.c</itemPath>
+      <itemPath>Consumo.h</itemPath>
+      <itemPath>Aplicacion.c</itemPath>
+      <itemPath>Aplicacion.h</itemPath>
     </logicalFolder>
     <logicalFolder name="HeaderFiles"
                    displayName="Header Files"
@@ -377,6 +381,7 @@
         <property key="UART5" value="true"/>
         <property key="UART6" value="true"/>
         <property key="debugoptions.useswbreakpoints" value="true"/>
+        <property key="firmware.download.all" value="false"/>
         <property key="hwtoolclock.frcindebug" value="false"/>
         <property key="memories.aux" value="false"/>
         <property key="memories.bootflash" value="false"/>

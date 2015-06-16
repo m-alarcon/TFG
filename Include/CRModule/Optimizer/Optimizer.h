@@ -38,19 +38,20 @@
 
 #include "ConfigOptimizer.h"
 
+#include "../../Aplicacion.h"
+
 /*****************************************************************************/
 /***************************DEFINICION DE TIPOS*******************************/
-
 /*****************************************************************************/
 
 typedef enum _OPTACTION
 {
-    ActGameTh = 0x01, ActProcRq
+    ActGameTh = 0x01, ActCons = 0x02, ActProcRq
 } OPTACTION;
 
 typedef enum _OPTSUBACTION
 {
-    SubActChngCost = 0x01
+    SubActChngCost = 0x01, SubActCambio = 0x02, SubActProcInfoGT
 } OPTSUBACTION;
 
 typedef enum _OPTPROCACTION
@@ -72,6 +73,11 @@ typedef enum _OPTSTATMACH
     Idle = 0x01, WaitinAnsw4ChngChn
 } OPTSTATMACH;
 
+typedef enum _OPTGTSTATE
+{
+    EsperandoDecisionRestoNodos = 0x01, ComunicarDecFinal
+} OPTGTSTATE;
+
 /*La estructura de los parametros del Mensaje con destino este modulo.*/
 typedef struct _OPTM_MSSG_RCVD
 {
@@ -90,6 +96,17 @@ typedef struct _OPTM_MSSG_RCVD
 /*************************FIN DEFINICION DE TIPOS*****************************/
 /*****************************************************************************/
 
+/*****************************************************************************/
+/*****************DEFINICION DE CONSTANTES Y VARIABLES************************/
+/*****************************************************************************/
+#define MAX_VECTOR_POTENCIA     5
+#define UMBRAL_POTENCIA         11
+
+BYTE MSSG_PROC_OPTM;
+
+/*****************************************************************************/
+/****************FIN DEFINICION DE CONSTANTES Y VARIABLES*********************/
+/*****************************************************************************/
 
 /*****************************************************************************/
 /*********************************FUNCIONES***********************************/
@@ -113,6 +130,8 @@ BOOL CRM_Optm_Config(INPUT OPTACTION SubAccion, INPUT BYTE ConfigCosteTx, INPUT 
 /*Funciones de inicializacion*/
 BOOL CRM_Optm_Init(void);
 /*Fin de las funciones de inicializacion*/
+
+BOOL CRM_Optm_Cons(OPTM_MSSG_RCVD *Peticion);
 
 /*Rutina de ejecucion del optimizer*/
 BOOL CRM_Optm_Int(void);

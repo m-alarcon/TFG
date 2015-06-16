@@ -35,6 +35,10 @@
                                 consideramos para que las primeras veces la
                                 contribucino no sea brutal y modifique todo el
                                 proceso.*/
+#define MAX_VECTOR_POTENCIA 5 /*Se usa para cambiar el tamaño del vector con el
+                                que se hace la media para lanzar el algoritmo*/
+#define MAX_PAQ_APRENDIZAJE 100
+#define MAX_CLUSTERS        10
 
 
 #endif

@@ -11,9 +11,11 @@
  ******************************************************************************/
 
 #include "CWSN LSI Node/Include/NodeHAL.h"
-#include "CWSN LSI Node/Include/WirelessProtocols/Console.h"    //Pruebas
-
-
+#include "CWSN LSI Node/Include/WirelessProtocols/Console.h"
+#include "DataClustering.h"    //Pruebas
+#include "Consumo.h"
+    
+int i = 0;
 #if defined MIWI_2400_RI
 radioInterface ri3 = MIWI_2400;
 BYTE NumChannels3 = MIWI2400NumChannels;
@@ -70,6 +72,9 @@ INIT_STAGE:
     InitAppVariables();
     InitNode();
 
+    //Inicialización demo malarcon
+    InitTimer5();
+    
 #if defined NODE_NOP
     while (1) { //Bucle infinito. Mantiene las pilas y no hace nada mas.
 #if defined NOP_JOINS_AND_LEAVES_LOOP
@@ -77,8 +82,7 @@ INIT_STAGE:
 #if defined MIWI_0434_RI
         Printf("\r\nSearching for PANs and establishing connections "
                 "in 434 MHZ.");
-        if (MiApp_SearchConne
-            ction(9, 0xFFFFFFFF, MIWI_0434)) {
+        if (MiApp_SearchConnection(9, 0xFFFFFFFF, MIWI_0434)) {
             MiApp_EstablishConnection(0, 0, MIWI_0434);
         }
         SWDelay(6000);
@@ -149,7 +153,8 @@ INIT_STAGE:
         //goto POWER_DISSIPATION_TEST;
         //goto DEMO_PFC_AGUS;
         //goto STAGE02;
-        goto CRMODULE_TEST;
+        //goto CRMODULE_TEST;
+        goto DC_TEST;
 
         STAGE01:        //COMPROBACION DEL ESTADO INICIAL.
         
@@ -1094,7 +1099,7 @@ INIT_STAGE:
                     j = 0;
                     i = 0;
                     r = 0; //error counter
-        
+
                     LED1 = 1;
                     LED2 = 0;
                     LED3 = 0;
@@ -1322,16 +1327,25 @@ INIT_STAGE:
 CRMODULE_TEST:
 
         //continue;
-        DataClustering();
+        Rutina_Principal();
 
-        //Prueba led Manu
-        /*if (LED1 == 0) {
-            SwitchOnLed(1);
-        } else {
-            SwitchOffLed(1);
-        }
-        SWDelay(1000);
-        */
+DC_TEST:
+        
+        TestAddress[0] = 0x00;
+        TestAddress[1] = 0x11;
+        TestAddress[2] = 0x22;
+        TestAddress[3] = 0x33;
+        TestAddress[4] = 0x44;
+        TestAddress[5] = 0x55;
+        TestAddress[6] = 0x66;
+        #if defined NODE_1
+            TestAddress[7] = 0x22;
+        #elif defined NODE_2
+            TestAddress[7] = 0x11;//Dirección del nodo 1
+        #endif
+        Enviar_Paquete_Datos_App(MIWI_2400, LONG_MIWI_ADDRMODE, TestAddress);
+
+
     }
     return 0;
 }
