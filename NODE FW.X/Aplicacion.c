@@ -14,9 +14,7 @@ RECEIVED_MESSAGE AppRXBuffer;
 BYTE AppDireccion[MY_ADDRESS_LENGTH];
 BYTE BufferRx[RX_BUFFER_SIZE];
 
-BYTE MSSG_PROC_APP = 0;
-
-void Enviar_Paquete_Datos_App(radioInterface ri, BYTE addrmode, BYTE *addr){
+void Enviar_Paquete_Datos_App(radioInterface ri, BYTE modo, BYTE *addr){
 
     BYTE n_rtx,c;
     n_rtx = 0;
@@ -35,7 +33,7 @@ void Enviar_Paquete_Datos_App(radioInterface ri, BYTE addrmode, BYTE *addr){
     Printf("\r\nEnvio de mensaje de datos.");
     while(TRUE){
         //Enviar paquete con los datos que haya en el buffer de la interfaz
-        i = SendPckt(ri, addrmode, addr);
+        i = SendPckt(ri, modo, addr);
         if (i != NO_ERROR){
             Printf(" => FALLO");
             i = GetFreeTXBufSpace(ri);
@@ -55,6 +53,7 @@ void Enviar_Paquete_Datos_App(radioInterface ri, BYTE addrmode, BYTE *addr){
                 DiscardTXData(ri);
                 break;
             }
+            SWDelay(200);
         }
         else{
             Printf(" => OK");

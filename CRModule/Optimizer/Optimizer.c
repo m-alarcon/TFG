@@ -625,11 +625,11 @@ BOOL CRM_Optm_Incluir_Potencia(BYTE *pVector){
     BYTE *pRSSI = &RSSI;
     if (MSSG_PROC_OPTM == 0){
         if(GetRSSI(ri,pRSSI) == 0){
-            for(i = MAX_VECTOR_POTENCIA-1; i >= 0; i--){
+            for(i = MAX_VECTOR_POTENCIA-1; i >= 0; --i){
                 if(i > 0){
-                    *(pVector+i) = *(pVector+i-1);
+                    *(&pVector+i) = *(&pVector+i-1);
                 } else {
-                    *(pVector) = *(pRSSI);
+                    *pVector = *pRSSI;
                 }
             }
         }
@@ -645,7 +645,7 @@ BOOL CRM_Optm_Incluir_Potencia(BYTE *pVector){
         PeticionRepoPotencias.Param2 = pRSSI;
 
         CRM_Message(NMM, SubM_Repo, &PeticionRepoPotencias);
-
+        limpiaBufferRX();
         return TRUE;
     } else {
 
@@ -830,19 +830,26 @@ BOOL CRM_Optm_Cons(OPTM_MSSG_RCVD *Peticion){
 BOOL CRM_Optm_Int(void)
 {
 
-    //Cada vez que entramos incluimos la potencia del paquete que hemos recibido
-    REPO_MSSG_RCVD PeticionRepoPotencias;
-    BYTE potencias[MAX_VECTOR_POTENCIA];
-    BYTE *pPotencias = &potencias[0];
-    PeticionRepoPotencias.Action = ActSndDta;
-    PeticionRepoPotencias.DataType = EnvPotencias;
-    PeticionRepoPotencias.Param1 = pPotencias;
+    BYTE hayPaquete = 0x00;
+    hayPaquete = WhichRIHasData();
+    if(hayPaquete != 0x00){
+        //Cada vez que entramos incluimos la potencia del paquete que hemos recibido
+        REPO_MSSG_RCVD PeticionRepoPotencias;
+        BYTE potencias[MAX_VECTOR_POTENCIA];
+        BYTE *pPotencias = &potencias[0];
+        PeticionRepoPotencias.Action = ActSndDta;
+        PeticionRepoPotencias.DataType = EnvPotencias;
+        PeticionRepoPotencias.Param1 = pPotencias;
 
-    CRM_Message(NMM, SubM_Repo, &PeticionRepoPotencias);
+        CRM_Message(NMM, SubM_Repo, &PeticionRepoPotencias);
 
-    BOOL i = CRM_Optm_Incluir_Potencia(pPotencias);
-    if (i == FALSE){
-        Printf("\r\nHa habido un error al incluir la potencia del último paquete");
+
+        BOOL i = CRM_Optm_Incluir_Potencia(pPotencias);
+        if (i == FALSE){
+            Printf("\r\nHa habido un error al incluir la potencia del ultimo paquete");
+        } else {
+            Printf("\r\nSe ha incluido la potencia del ultimo paquete");
+        }
     }
 
 #if defined(TEST5)
@@ -924,6 +931,7 @@ BOOL CRM_Optm_Int(void)
 
     //Aquí llamo a la función de la teoría de juegos que se encarga de ver si hay
     //que cambiar de canal o no y de hacer todo el proceso del algoritmo.
+
 
 
 

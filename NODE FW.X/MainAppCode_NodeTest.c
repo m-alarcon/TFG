@@ -140,6 +140,12 @@ INIT_STAGE:
 
     BYTE i, j, k, r, data;
 
+    #if defined NODE_1
+        BYTE EUINodoExt[] = {EUI_0, EUI_1, EUI_2, EUI_3, EUI_4, EUI_5, EUI_6, 0x22};
+    #elif defined NODE_2
+        BYTE EUINodoExt[] = {EUI_0, EUI_1, EUI_2, EUI_3, EUI_4, EUI_5, EUI_6, 0x11};
+    #endif
+
     while (1) {
 
         UINT16 delay;
@@ -1330,21 +1336,11 @@ CRMODULE_TEST:
         Rutina_Principal();
 
 DC_TEST:
-        
-        TestAddress[0] = 0x00;
-        TestAddress[1] = 0x11;
-        TestAddress[2] = 0x22;
-        TestAddress[3] = 0x33;
-        TestAddress[4] = 0x44;
-        TestAddress[5] = 0x55;
-        TestAddress[6] = 0x66;
-        #if defined NODE_1
-            TestAddress[7] = 0x22;
-        #elif defined NODE_2
-            TestAddress[7] = 0x11;//Dirección del nodo 1
-        #endif
-        Enviar_Paquete_Datos_App(MIWI_2400, LONG_MIWI_ADDRMODE, TestAddress);
 
+        ri = MIWI_0868;
+        Enviar_Paquete_Datos_App(ri, LONG_MIWI_ADDRMODE, &EUINodoExt);
+        
+        SWDelay(1000);
 
     }
     return 0;

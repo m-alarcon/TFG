@@ -17,10 +17,6 @@
 #define	APLICACION_H
 
 
-
-BYTE MSSG_PROC_APP;
-
-
 void limpiaBufferRX(void);
 
 #endif	/* APLICACION_H */
