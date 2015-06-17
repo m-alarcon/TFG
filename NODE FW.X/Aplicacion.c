@@ -85,10 +85,35 @@ void limpiaBufferRX(void){
     }
 }
 
+BOOL Rcvd_Buffer1(RECEIVED_MESSAGE *Buffer)
+{
+    extern radioInterface ri;
+    BYTE i, err;
+    if (!GetPayloadToRead(ri)) {
+        return FALSE;
+    }
+    err = GetRXSourceAddr(ri, Buffer->SourceAddress);
+    if (err & 0x80) {
+        Printf("\r\nError al obtener la dirección: ");
+        PrintChar(err);
+        return FALSE;
+    }
+    for (i = 0; GetPayloadToRead(ri) > 0; i++) {
+        BYTE * storeItHere = &(Buffer->Payload[i]);
+        err = GetRXData(ri, storeItHere);
+        if (err) {
+            Printf("\r\nError al obtener la dirección: ");
+            PrintChar(err);
+            return FALSE;
+        }
+    }
+    Buffer->PayloadSize = i;
+    return TRUE;
+}
+
 void Recibir_info(void){
 
     BYTE i, j;
-
     VCCMSSGTYPE CabeceraRxMssg;
     RecibiendoMssg = TRUE;
 

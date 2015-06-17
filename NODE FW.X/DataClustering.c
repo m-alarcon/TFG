@@ -324,31 +324,6 @@ void __ISR(_TIMER_5_VECTOR, ipl1AUTO)IntTmp(void) {
     mT5ClearIntFlag();
 }
 
-BOOL Rcvd_Buffer1(RECEIVED_MESSAGE *Buffer)
-{
-    radioInterface ri = MIWI_2400;
-    BYTE i, err;
-    if (!GetPayloadToRead(ri)) {
-        return FALSE;
-    }
-    err = GetRXSourceAddr(ri, Buffer->SourceAddress);
-    if (err & 0x80) {
-        Printf("\r\nError al obtener la dirección: ");
-        PrintChar(err);
-        return FALSE;
-    }
-    for (i = 0; GetPayloadToRead(ri) > 0; i++) {
-        BYTE * storeItHere = &(Buffer->Payload[i]);
-        err = GetRXData(ri, storeItHere);
-        if (err) {
-            Printf("\r\nError al obtener la dirección: ");
-            PrintChar(err);
-            return FALSE;
-        }
-    }
-    Buffer->PayloadSize = i;
-    return TRUE;
-}
 /*
 void Envio_Datos_Atacantes(at data)
 {

@@ -35,7 +35,7 @@
 #endif
 
 //Cada cuanto queremos que se ejecute la rutina de optimizacion.
-#define PeriodoXDefecto 13000 //En mseg => Cada 10 segundos.
+#define PeriodoXDefecto 500 //En mseg => Cada 10 segundos.
 
 /*Parametros para la funcion de optimizacion de Elena.*/
 #define CosteTxXDefecto 100

@@ -89,7 +89,7 @@ extern radioInterface ri;
 
     BYTE MSSG_PROC_OPTM = 0;
     BYTE n_msg = 2; /*Numero de mensajes necesarios para cambiar de canal. Cambiar con el número que sea realmente*/
-    BYTE CosteCambio, CosteOcupado, CosteNoCambio;
+    WORD CosteCambio, CosteOcupado, CosteNoCambio;
     BYTE EstadoGT;
 
 /*****************************************************************************/
@@ -395,7 +395,7 @@ NOACEPTA: //Si no queremos notifcar el no cambio comentariamos y dejaríamos solo
                 PeticionVCCCambioCanal.BufferVCC = &MensajeVCC;
                 PeticionVCCCambioCanal.DirNodDest = DireccionNodoDestino;
                 PeticionVCCCambioCanal.Transceiver = Peticion->Transceiver;
-                BYTE sizeBufferVCC = 1;
+                BYTE sizeBufferVCC = 5;
                 PeticionVCCCambioCanal.Param1 = &sizeBufferVCC;
 
                 PeticionCambioCanal.Peticion_Destino.PeticionVCC = &PeticionVCCCambioCanal;
@@ -691,22 +691,15 @@ BOOL CRM_Optm_Task(TASKPARAM Opcion)
 }
 /*Fin de rutina de tareas generales del sub-modulo*/
 
-BOOL CRM_Optm_Incluir_Potencia(BYTE *pVector){
+BOOL CRM_Optm_Incluir_Potencia(){
     
     BYTE RSSI,i;
     BYTE *pRSSI = &RSSI;
     if (MSSG_PROC_OPTM == 0){
         if(GetRSSI(ri,pRSSI) == 0){
-            for(i = 0; i < MAX_VECTOR_POTENCIA; i++){
-                if(i < (MAX_VECTOR_POTENCIA - 1)){
-                    *(pVector+i) = *(pVector+i+1);
-                } else {
-                    *(pVector+i) = *pRSSI;
-                }
-            }
+            MSSG_PROC_OPTM = 1;
         }
-        MSSG_PROC_OPTM = 1;
-
+        
         //Creo el mensaje para repository y se lo mando
         REPO_MSSG_RCVD PeticionRepoPotencias;
         BYTE potencias[MAX_VECTOR_POTENCIA];
@@ -728,14 +721,13 @@ BOOL CRM_Optm_Incluir_Potencia(BYTE *pVector){
 BOOL CRM_Optm_Inicio_GT(BYTE *pVector){
 
     BOOL inicio;
-    BYTE i,s,n,media;
-    n = 0;
+    BYTE i, media;
+    LONG s;
     s = 0;
     for(i = 0; i < MAX_VECTOR_POTENCIA; i++){
-        s += *pVector;
-        n++;
+        s += *(pVector + i);
     }
-    media = s/n;
+    media = s/MAX_VECTOR_POTENCIA;
     if(media < UMBRAL_POTENCIA){
         inicio = TRUE;
     } else {
@@ -962,38 +954,6 @@ BOOL CRM_Optm_Cons(OPTM_MSSG_RCVD *Peticion){
 BOOL CRM_Optm_Int(void)
 {
 
-    BYTE hayPaquete = 0x00;
-    hayPaquete = WhichRIHasData();
-    if(hayPaquete != 0x00){
-        //Cada vez que entramos incluimos la potencia del paquete que hemos recibido
-        REPO_MSSG_RCVD PeticionRepoPotencias;
-        BYTE potencias[MAX_VECTOR_POTENCIA];
-        BYTE *pPotencias = &potencias[0];
-        PeticionRepoPotencias.Action = ActSndDta;
-        PeticionRepoPotencias.DataType = EnvPotencias;
-        PeticionRepoPotencias.Param1 = pPotencias;
-
-        CRM_Message(NMM, SubM_Repo, &PeticionRepoPotencias);
-
-        BOOL i = CRM_Optm_Incluir_Potencia(pPotencias);
-        if (i == FALSE){
-            Printf("\r\nHa habido un error al incluir la potencia del ultimo paquete");
-        } else {
-            Printf("\r\nSe ha incluido la potencia del ultimo paquete");
-        }
-
-        BOOL inicioCambio = CRM_Optm_Inicio_GT(pPotencias);
-        if (inicioCambio){
-            OPTM_MSSG_RCVD PeticionInicioCambio;
-            PeticionInicioCambio.Action = SubActCambio;
-            PeticionInicioCambio.Transceiver = ri;
-            CRM_Optm_Cons(&PeticionInicioCambio);
-        }
-
-    }
-
-
-
 #if defined(TEST5)
     t1G = MiWi_TickGet(); //Cada vez que entra se guarda en t1 el tiempo.
 #endif
@@ -1070,6 +1030,36 @@ BOOL CRM_Optm_Int(void)
 #endif
             //TODO aqui deben ir las llamadas a las funciones que deba ejecutar el
             //optimizer.
+
+#if defined NODE_1
+            
+    if(WhichRIHasData() != 0x00 && MSSG_PROC_OPTM == 0){
+        //Cada vez que entramos incluimos la potencia del paquete que hemos recibido
+        BOOL i = CRM_Optm_Incluir_Potencia();
+        if (i == FALSE){
+            Printf("\r\nHa habido un error al incluir la potencia del ultimo paquete");
+        } else {
+            Printf("\r\nSe ha incluido la potencia del ultimo paquete");
+        }
+        
+        REPO_MSSG_RCVD PeticionRepoPotencias;
+        BYTE *pPotencias;
+        PeticionRepoPotencias.Action = ActSndDta;
+        PeticionRepoPotencias.DataType = EnvPotencias;
+        PeticionRepoPotencias.Param1 = pPotencias;
+
+        CRM_Message(NMM, SubM_Repo, &PeticionRepoPotencias);
+        ////////////////pPotencias = &
+        BOOL inicioCambio = CRM_Optm_Inicio_GT(pPotencias);
+        if (inicioCambio == TRUE){
+            OPTM_MSSG_RCVD PeticionInicioCambio;
+            PeticionInicioCambio.Action = SubActCambio;
+            PeticionInicioCambio.Transceiver = ri;
+            CRM_Optm_Cons(&PeticionInicioCambio);
+        }
+        
+    }
+#endif
 
         }
 

@@ -1339,7 +1339,12 @@ DC_TEST:
 
         ri = MIWI_0868;
         Enviar_Paquete_Datos_App(ri, LONG_MIWI_ADDRMODE, &EUINodoExt);
+#if defined NODE_1
         Recibir_info();
+#endif
+#if defined NODE_2
+        limpiaBufferRX();
+#endif
         SWDelay(1000);
 
     }

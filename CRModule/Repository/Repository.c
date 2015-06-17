@@ -124,7 +124,7 @@ BOOL CRM_Repo_SendDat(REPO_MSSG_RCVD *Peticion)
         case AllInfo:
             break;
         case EnvPotencias:
-            Peticion->Param2 = vectorPotencias;
+            Peticion->Param1 = &vectorPotencias[0];
             break;
         case EnvRTx:
             switch(ri)
@@ -244,8 +244,12 @@ void CRM_Repo_NodoPropio(REPO_MSSG_RCVD *Peticion)
         case 0x05:
             break;
         case IncluirPotencia:
-            for (i = 0; i < MAX_VECTOR_POTENCIA; i++){
-                vectorPotencias[i] = *(&(*((BYTE*) (Peticion->Param2))) + i);
+            for(i = 0; i < MAX_VECTOR_POTENCIA; i++){
+                if(i < (MAX_VECTOR_POTENCIA - 1)){
+                    vectorPotencias[i] = vectorPotencias[i+1];
+                } else {
+                    vectorPotencias[i] = *((BYTE*)(Peticion->Param2));
+                }
             }
             break;
         default:
