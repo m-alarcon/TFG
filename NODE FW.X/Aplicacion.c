@@ -41,7 +41,7 @@ void Enviar_Paquete_Datos_App(radioInterface ri, BYTE modo, BYTE *addr){
             PrintDec(i);
             n_rtx++;
             if(n_rtx >= maxRTxXDefecto){
-                Printf("\r\nSe ha alcanzado el numero máximo de retransmisiones, se descarta el paquete.");
+                Printf("\r\nSe ha alcanzado el numero maximo de retransmisiones, se descarta el paquete.");
                 switch(ri){
                     case MIWI_0434:
                         MIWI434_rtx[c] = maxRTxXDefecto;

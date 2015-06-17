@@ -56,7 +56,7 @@ typedef enum _OPTSUBACTION
 
 typedef enum _OPTPROCACTION
 {
-    ProcAsk4Chng = 0x01, ProcChangAnsw
+    ProcAsk4Chng = 0x01, ProcChangAnsw, ProcCambioCanal
 } OPTPROCACTION;
 
 
@@ -131,6 +131,7 @@ BOOL CRM_Optm_Config(INPUT OPTACTION SubAccion, INPUT BYTE ConfigCosteTx, INPUT 
 BOOL CRM_Optm_Init(void);
 /*Fin de las funciones de inicializacion*/
 
+BOOL CRM_Optm_Calcular_Costes(BYTE n_rtx);
 BOOL CRM_Optm_Cons(OPTM_MSSG_RCVD *Peticion);
 
 /*Rutina de ejecucion del optimizer*/

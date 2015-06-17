@@ -35,20 +35,5 @@
 //Cambiar según necesidades
 
 
-
-
-typedef struct mensCambio {
-    BYTE chOpt;
-    BYTE potCanales[MIWI2400NumChannels];
-} msgChng;
-
-BYTE canal;
-BOOL recPaqCambioCanal;
-msgChng paqRec;
-
-void Consumo(void);
-BYTE CalcularMedia(BYTE *pVector);
-BOOL CalcularCostes();
-
 #endif	/* CONSUMO_H */
 

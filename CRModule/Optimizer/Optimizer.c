@@ -337,6 +337,51 @@ NOACEPTA: //Si no queremos notifcar el no cambio comentariamos y dejaríamos solo
             break;            
         }
 //#endif
+        case ProcCambioCanal:
+        {
+            REPO_MSSG_RCVD PeticionRepoRTx;
+            BYTE num_RTx;
+            BYTE canal = GetOpChannel(Peticion->Transceiver);
+            PeticionRepoRTx.Action = ActSndDta;
+            PeticionRepoRTx.DataType = EnvRTx;
+            PeticionRepoRTx.Param1 = &canal;
+
+            CRM_Message(NMM, SubM_Repo, &PeticionRepoRTx);
+
+            BOOL cambio = CRM_Optm_Calcular_Costes(num_RTx);
+
+            if(cambio == TRUE){
+                //Notifico al otro nodo que quiero cambiar de canal y hago 4)
+                //Mandar la información del cambio de canal al resto de nodos.
+                BOOL MensajeVCC = TRUE;
+                #if defined NODE_1
+                    BYTE DireccionNodoDestino[] = {EUI_0, EUI_1, EUI_2, EUI_3, EUI_4, EUI_5, EUI_6 , 0x22};
+                #elif defined NODE_2
+                    BYTE DireccionNodoDestino[] = {EUI_0, EUI_1, EUI_2, EUI_3, EUI_4, EUI_5, EUI_6 , 0x11};
+                #endif
+                MSN_MSSG_RCVD PeticionCambioCanal;
+                VCC_MSSG_RCVD PeticionVCCCambioCanal;
+
+                PeticionVCCCambioCanal.Action = ActSend;
+                PeticionVCCCambioCanal.BufferVCC = &MensajeVCC;
+                PeticionVCCCambioCanal.DirNodDest = DireccionNodoDestino;
+                PeticionVCCCambioCanal.Transceiver = Peticion->Transceiver;
+                BYTE sizeBufferVCC = 1;
+                PeticionVCCCambioCanal.Param1 = &sizeBufferVCC;
+
+                PeticionCambioCanal.Peticion_Destino.PeticionVCC = &PeticionVCCCambioCanal;
+
+                CRM_Message(VCC, SubM_Ext, &PeticionCambioCanal);
+
+                //Mando mensaje a optimizer para ejecutar GT
+                OPTM_MSSG_RCVD PeticionCambio;
+                PeticionCambio.Action = SubActCambio;
+
+            } else {
+                //Notifico al otro nodo que no quiero cambiar.
+            }
+            break;
+            }
         default:
             break;
     }
@@ -692,27 +737,19 @@ BOOL CRM_Optm_Calcular_Costes(BYTE n_rtx){
 
 BOOL CRM_Optm_Cons(OPTM_MSSG_RCVD *Peticion){
 
-    BOOL inicioCambio = FALSE;
     BOOL cambioCanal = FALSE;
-    BYTE n_rtx, i;
-    REPO_MSSG_RCVD PeticionRepoPotencias;
-    BYTE potencias[MAX_VECTOR_POTENCIA];
+    BYTE i;
     REPO_MSSG_RCVD PeticionRepoRTx;
     BYTE num_RTx;
+    BYTE potencias[MAX_VECTOR_POTENCIA];
     BYTE *pPotencias = &potencias[0];
-    BYTE canal = GetOpChannel(ri);
+    BYTE canal = GetOpChannel(Peticion->Transceiver);
 
     switch (Peticion->Action)
     {
         case(SubActCambio):
 
-            //Pedir a repo el vector de potencias y el numero de retransmisiones en el canal actual
-            PeticionRepoPotencias.Action = ActSndDta;
-            PeticionRepoPotencias.DataType = EnvPotencias;
-            PeticionRepoPotencias.Param1 = pPotencias;
-
-            CRM_Message(NMM, SubM_Repo, &PeticionRepoPotencias);
-
+            //Pedir a repo el numero de retransmisiones en el canal actual
             PeticionRepoRTx.Action = ActSndDta;
             PeticionRepoRTx.DataType = EnvRTx;
             PeticionRepoRTx.Param1 = &canal;
@@ -720,11 +757,8 @@ BOOL CRM_Optm_Cons(OPTM_MSSG_RCVD *Peticion){
             CRM_Message(NMM, SubM_Repo, &PeticionRepoRTx);
 
             /*Realiza el calculo de la estrategia de optimizacion.*/
-            inicioCambio = CRM_Optm_Inicio_GT(pPotencias);
-            if(inicioCambio){
-                cambioCanal = CRM_Optm_Calcular_Costes(num_RTx);
-            }
 
+            cambioCanal = CRM_Optm_Calcular_Costes(num_RTx);
             if(cambioCanal)
             {
                 /*Primero calculamos el canal optimo para el cambio.*/
@@ -843,14 +877,24 @@ BOOL CRM_Optm_Int(void)
 
         CRM_Message(NMM, SubM_Repo, &PeticionRepoPotencias);
 
-
         BOOL i = CRM_Optm_Incluir_Potencia(pPotencias);
         if (i == FALSE){
             Printf("\r\nHa habido un error al incluir la potencia del ultimo paquete");
         } else {
             Printf("\r\nSe ha incluido la potencia del ultimo paquete");
         }
+
+        BOOL inicioCambio = CRM_Optm_Inicio_GT(pPotencias);
+        if (inicioCambio){
+            OPTM_MSSG_RCVD PeticionInicioCambio;
+            PeticionInicioCambio.Action = SubActCambio;
+            PeticionInicioCambio.Transceiver = ri;
+            CRM_Optm_Cons(&PeticionInicioCambio);
+        }
+
     }
+
+
 
 #if defined(TEST5)
     t1G = MiWi_TickGet(); //Cada vez que entra se guarda en t1 el tiempo.
@@ -928,30 +972,6 @@ BOOL CRM_Optm_Int(void)
 #endif
             //TODO aqui deben ir las llamadas a las funciones que deba ejecutar el
             //optimizer.
-
-    //Aquí llamo a la función de la teoría de juegos que se encarga de ver si hay
-    //que cambiar de canal o no y de hacer todo el proceso del algoritmo.
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
         }
 

@@ -1339,7 +1339,7 @@ DC_TEST:
 
         ri = MIWI_0868;
         Enviar_Paquete_Datos_App(ri, LONG_MIWI_ADDRMODE, &EUINodoExt);
-        
+        Recibir_info();
         SWDelay(1000);
 
     }

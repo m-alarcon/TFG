@@ -27,12 +27,6 @@
 #include "CRModule/Optimizer/ConfigOptimizer.h"
 #include "DataClustering.h"
 
-BYTE *pVectorPotencias = &vectorPotencias[0];
-
-msgChng datosPrueba;
-BOOL cambioCanal = FALSE;
-BYTE canal = 0;
-BOOL recPaqCambioCanal = FALSE;
 /*
 void Consumo(void){
 
