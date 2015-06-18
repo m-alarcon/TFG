@@ -35,6 +35,7 @@
 
 #include "CRModule/Discovery/Discovery.h"
 #include "CRModule/Execution/Execution.h"
+#include "CRModule/VCC/VCC.h"
 
 #include "ConfigOptimizer.h"
 
@@ -100,7 +101,7 @@ typedef struct _OPTM_MSSG_RCVD
 /*****************DEFINICION DE CONSTANTES Y VARIABLES************************/
 /*****************************************************************************/
 #define MAX_VECTOR_POTENCIA     5
-#define UMBRAL_POTENCIA         11
+#define UMBRAL_POTENCIA         20
 
 BYTE MSSG_PROC_OPTM;
 

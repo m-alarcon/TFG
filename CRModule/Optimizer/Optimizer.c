@@ -88,7 +88,7 @@ extern radioInterface ri;
     //Fin de optimizer de Elena.
 
     BYTE MSSG_PROC_OPTM = 0;
-    BYTE n_msg = 2; /*Numero de mensajes necesarios para cambiar de canal. Cambiar con el número que sea realmente*/
+    BYTE n_msg = 3; /*Numero de mensajes necesarios para cambiar de canal. Cambiar con el número que sea realmente*/
     WORD CosteCambio, CosteOcupado, CosteNoCambio;
     BYTE EstadoGT;
 
@@ -339,6 +339,7 @@ NOACEPTA: //Si no queremos notifcar el no cambio comentariamos y dejaríamos solo
 //#endif
         case ProcCambioCanal:
         {
+            Printf("\r\nSe ha recibido petición de cambio de canal del otro nodo.");
             REPO_MSSG_RCVD PeticionRepoRTx;
             BYTE num_RTx;
             BYTE canal = GetOpChannel(Peticion->Transceiver);
@@ -570,6 +571,8 @@ BOOL CRM_Optm_Init(void)
         CosteTx = CosteTxXDefecto;
         CosteRx = CosteRxXDefecto;
         CosteSensing = CosteSensingXDefecto;
+        EstadoGT = Idle;
+        CtrlMssgFlag = FALSE;
        // NumMsj = numMsjXDefecto; //Este es mi "espacio muestral" de los mensajes
             //que tengo en cuenta para realizar los calculos.
         MaxRTx = maxRTxXDefecto;
@@ -590,7 +593,7 @@ BOOL CRM_Optm_Init(void)
         ProbChngCompi = probChngCompiXDefecto;
     //Fin de la de coste de cambio
 
-#if defined(TEST4)
+//#if defined(TEST4)
     PeticionRecepcion.Action = ActRecv;
     BufferRecepcionPrueba.SourceAddress = Direccion;
     BufferRecepcionPrueba.Payload = BufferPrueba;
@@ -598,9 +601,9 @@ BOOL CRM_Optm_Init(void)
     BYTE TamanoBuffer = RX_BUFFER_SIZE;
     PeticionRecepcion.Param1 = &TamanoBuffer;
 
-    PeticionTest2.Action = SubActChngCost;
+    //PeticionTest2.Action = SubActChngCost;
 
-#endif
+//#endif
 #if defined TEST6
 //TODO inicializar lo que haga falta como por ejemplo el timeout.
 //    MilisDeTimeOut = TIEMPODEESPERARESPUESTA;
@@ -728,7 +731,7 @@ BOOL CRM_Optm_Inicio_GT(BYTE *pVector){
         s += *(pVector + i);
     }
     media = s/MAX_VECTOR_POTENCIA;
-    if(media < UMBRAL_POTENCIA){
+    if(media < 0xA0){
         inicio = TRUE;
     } else {
         inicio = FALSE;
@@ -759,9 +762,6 @@ BOOL CRM_Optm_Cons(OPTM_MSSG_RCVD *Peticion){
     BOOL cambioCanal = FALSE;
     BYTE i;
     REPO_MSSG_RCVD PeticionRepoRTx;
-    BYTE num_RTx;
-    BYTE potencias[MAX_VECTOR_POTENCIA];
-    BYTE *pPotencias = &potencias[0];
     BYTE canal = GetOpChannel(Peticion->Transceiver);
 
     switch (Peticion->Action)
@@ -772,12 +772,13 @@ BOOL CRM_Optm_Cons(OPTM_MSSG_RCVD *Peticion){
             PeticionRepoRTx.Action = ActSndDta;
             PeticionRepoRTx.DataType = EnvRTx;
             PeticionRepoRTx.Param1 = &canal;
+            PeticionRepoRTx.Transceiver = ri;
 
             CRM_Message(NMM, SubM_Repo, &PeticionRepoRTx);
 
             /*Realiza el calculo de la estrategia de optimizacion.*/
 
-            cambioCanal = CRM_Optm_Calcular_Costes(num_RTx);
+            cambioCanal = CRM_Optm_Calcular_Costes(8);//*(BYTE*)(PeticionRepoRTx.Param2));
             if(cambioCanal)
             {
                 /*Primero calculamos el canal optimo para el cambio.*/
@@ -830,8 +831,10 @@ BOOL CRM_Optm_Cons(OPTM_MSSG_RCVD *Peticion){
                     BYTE MensajeVCC[] = {VccCtrlMssg, SubM_Opt, ActProcRq, ProcCambioCanal, RSSIResultado434, CanalOptimo434, RSSIResultado868, CanalOptimo868, RSSIResultado2400, CanalOptimo2400, CanalOptimo, ri};
                     #if defined NODE_1
                         BYTE DireccionNodoDestino[] = {EUI_0, EUI_1, EUI_2, EUI_3, EUI_4, EUI_5, EUI_6 , 0x22};
+                        //BYTE DireccionNodoPropio[] = {EUI_0, EUI_1, EUI_2, EUI_3, EUI_4, EUI_5, EUI_6 , EUI_7};
                     #elif defined NODE_2
                         BYTE DireccionNodoDestino[] = {EUI_0, EUI_1, EUI_2, EUI_3, EUI_4, EUI_5, EUI_6 , 0x11};
+                        //BYTE DireccionNodoPropio[] = {EUI_0, EUI_1, EUI_2, EUI_3, EUI_4, EUI_5, EUI_6 , EUI_7};
                     #endif
                     MSN_MSSG_RCVD PeticionCambioCanal;
                     VCC_MSSG_RCVD PeticionVCCCambioCanal;
@@ -844,7 +847,9 @@ BOOL CRM_Optm_Cons(OPTM_MSSG_RCVD *Peticion){
                     PeticionVCCCambioCanal.Param1 = &sizeBufferVCC;
 
                     PeticionCambioCanal.Peticion_Destino.PeticionVCC = &PeticionVCCCambioCanal;
+                    //PeticionCambioCanal.DireccionEUI = DireccionNodoPropio;
 
+                    Printf("\r\nSe manda petición de cambio de canal al otro nodo.");
                     CRM_Message(VCC, SubM_Ext, &PeticionCambioCanal);
 
                     EstadoGT = EsperandoDecisionRestoNodos;
@@ -1030,8 +1035,6 @@ BOOL CRM_Optm_Int(void)
 #endif
             //TODO aqui deben ir las llamadas a las funciones que deba ejecutar el
             //optimizer.
-
-#if defined NODE_1
             
     if(WhichRIHasData() != 0x00 && MSSG_PROC_OPTM == 0){
         //Cada vez que entramos incluimos la potencia del paquete que hemos recibido
@@ -1041,23 +1044,25 @@ BOOL CRM_Optm_Int(void)
         } else {
             Printf("\r\nSe ha incluido la potencia del ultimo paquete");
         }
-        
-        REPO_MSSG_RCVD PeticionRepoPotencias;
-        PeticionRepoPotencias.Action = ActSndDta;
-        PeticionRepoPotencias.DataType = EnvPotencias;
+#if defined NODE_2
+        if (EstadoGT == Idle){
+            REPO_MSSG_RCVD PeticionRepoPotencias;
+            PeticionRepoPotencias.Action = ActSndDta;
+            PeticionRepoPotencias.DataType = EnvPotencias;
 
-        CRM_Message(NMM, SubM_Repo, &PeticionRepoPotencias);
+            CRM_Message(NMM, SubM_Repo, &PeticionRepoPotencias);
 
-        BOOL inicioCambio = CRM_Optm_Inicio_GT(PeticionRepoPotencias->Param1);//ASI??
-        if (inicioCambio){
-            OPTM_MSSG_RCVD PeticionInicioCambio;
-            PeticionInicioCambio.Action = SubActCambio;
-            PeticionInicioCambio.Transceiver = ri;
-            CRM_Optm_Cons(&PeticionInicioCambio);
+            BOOL inicioCambio = CRM_Optm_Inicio_GT(PeticionRepoPotencias.Param1);//ASI??
+            if (inicioCambio){
+                OPTM_MSSG_RCVD PeticionInicioCambio;
+                PeticionInicioCambio.Action = SubActCambio;
+                PeticionInicioCambio.Transceiver = ri;
+                CRM_Optm_Cons(&PeticionInicioCambio);
+            }
         }
+#endif
         
     }
-#endif
 
         }
 

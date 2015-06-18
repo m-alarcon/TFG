@@ -19,6 +19,7 @@ void Enviar_Paquete_Datos_App(radioInterface ri, BYTE modo, BYTE *addr){
     BYTE n_rtx,c;
     n_rtx = 0;
     i = 0;
+    EnviandoMssgApp = TRUE;
     c = GetOpChannel(ri);
     while(GetFreeTXBufSpace(ri) > 0){     //Hasta llenar el buffer de transmision
         j = PutTXData(ri, beatles[i]);
@@ -68,6 +69,7 @@ void Enviar_Paquete_Datos_App(radioInterface ri, BYTE modo, BYTE *addr){
             break;  //TRANSMISION CORRECTA, SALE DEL BUCLE
         }
     }
+    EnviandoMssgApp = FALSE;
 }
 
 void limpiaBufferRX(void){
@@ -115,7 +117,6 @@ void Recibir_info(void){
 
     BYTE i, j;
     VCCMSSGTYPE CabeceraRxMssg;
-    RecibiendoMssg = TRUE;
 
     AppRXBuffer.Payload = BufferRx;
     AppRXBuffer.SourceAddress = AppDireccion;
