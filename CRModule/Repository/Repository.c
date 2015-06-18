@@ -127,7 +127,7 @@ BOOL CRM_Repo_SendDat(REPO_MSSG_RCVD *Peticion)
             Peticion->Param1 = &vectorPotencias[0];
             break;
         case EnvRTx:
-            switch(ri)
+            switch(Peticion->Transceiver)
             {
                 case MIWI_0434:
                     Peticion->Param2 = &MIWI434_rtx[*((BYTE*) (Peticion->Param1))];

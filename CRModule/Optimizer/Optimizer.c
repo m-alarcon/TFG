@@ -1043,15 +1043,13 @@ BOOL CRM_Optm_Int(void)
         }
         
         REPO_MSSG_RCVD PeticionRepoPotencias;
-        BYTE *pPotencias;
         PeticionRepoPotencias.Action = ActSndDta;
         PeticionRepoPotencias.DataType = EnvPotencias;
-        PeticionRepoPotencias.Param1 = pPotencias;
 
         CRM_Message(NMM, SubM_Repo, &PeticionRepoPotencias);
-        ////////////////pPotencias = &
-        BOOL inicioCambio = CRM_Optm_Inicio_GT(pPotencias);
-        if (inicioCambio == TRUE){
+
+        BOOL inicioCambio = CRM_Optm_Inicio_GT(PeticionRepoPotencias->Param1);//ASI??
+        if (inicioCambio){
             OPTM_MSSG_RCVD PeticionInicioCambio;
             PeticionInicioCambio.Action = SubActCambio;
             PeticionInicioCambio.Transceiver = ri;
