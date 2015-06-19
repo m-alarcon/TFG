@@ -400,6 +400,8 @@ NOACEPTA: //Si no queremos notifcar el no cambio comentariamos y dejaríamos solo
                 PeticionCambioCanal.Peticion_Destino.PeticionVCC = &PeticionVCCCambioCanal;
 
                 CRM_Message(VCC, SubM_Ext, &PeticionCambioCanal);
+
+                EstadoGT = EsperandoDecisionFinal;
             }
             break;
             }
@@ -408,9 +410,13 @@ NOACEPTA: //Si no queremos notifcar el no cambio comentariamos y dejaríamos solo
             if(EstadoGT == EsperandoDecisionRestoNodos){
                 #if defined NODE_1
                 //Contar todas las respuestas que recibe hasta que sean igual que el número de nodos conectados.
+                //Cuando se han recibido todas las respuestas manda un mensaje a todos comunicando la decisión final.
                 #else
-                if(Peticion.)
-                EstadoGT =
+                if(*((BYTE*)(Peticion->Param2)) == TRUE){
+                    EstadoGT = EsperandoDecisionFinal;
+                } else {
+                    EstadoGT = Clear;
+                }
                 #endif
 
             }
@@ -788,75 +794,75 @@ BOOL CRM_Optm_Cons(OPTM_MSSG_RCVD *Peticion){
             if(cambioCanal)
             {
                 /*Primero calculamos el canal optimo para el cambio.*/
-                    //Creamos unos parametros para un mensaje para Discovery.
-                    //Para cada una de las interfaces:
-                    BYTE CanalOptimo, CanalOptimo434, CanalOptimo868, CanalOptimo2400;
-                    DWORD TodosCanales = 0xFFFFFFFF;
-                    BYTE TiempoScan = 5;
-                    BYTE TipoScan = NOISE_DETECT_ENERGY;
-                    //Para cada una de las interfaces:
-                    BYTE RSSIResultado434 = 255;
-                    BYTE RSSIResultado868 = 255;
-                    BYTE RSSIResultado2400 = 255;
-                    //Creacion de un mensaje de discovery.
-                    DISC_MSSG_RCVD PeticionDiscCOpt;
-                    PeticionDiscCOpt.OrgModule = SubM_Opt;
-                    PeticionDiscCOpt.Action = ActSignDetc;
-                    PeticionDiscCOpt.Param1 = &TodosCanales;
-                    PeticionDiscCOpt.Param2 = &TiempoScan;
-                    PeticionDiscCOpt.Param3 = &TipoScan; //NOISE DETECT ENERGY.
+                //Creamos unos parametros para un mensaje para Discovery.
+                //Para cada una de las interfaces:
+                BYTE CanalOptimo, CanalOptimo434, CanalOptimo868, CanalOptimo2400;
+                DWORD TodosCanales = 0xFFFFFFFF;
+                BYTE TiempoScan = 5;
+                BYTE TipoScan = NOISE_DETECT_ENERGY;
+                //Para cada una de las interfaces:
+                BYTE RSSIResultado434 = 255;
+                BYTE RSSIResultado868 = 255;
+                BYTE RSSIResultado2400 = 255;
+                //Creacion de un mensaje de discovery.
+                DISC_MSSG_RCVD PeticionDiscCOpt;
+                PeticionDiscCOpt.OrgModule = SubM_Opt;
+                PeticionDiscCOpt.Action = ActSignDetc;
+                PeticionDiscCOpt.Param1 = &TodosCanales;
+                PeticionDiscCOpt.Param2 = &TiempoScan;
+                PeticionDiscCOpt.Param3 = &TipoScan; //NOISE DETECT ENERGY.
 
-                    //Ahora calculo el canal óptimo de cada interfaz y el canal más óptimo de todos:
-                    #ifdef MIWI_0434_RI
-                    PeticionDiscCOpt.Transceiver = MIWI_0434;
-                    PeticionDiscCOpt.Param4 = &RSSIResultado434;
-                    CanalOptimo434 = *(BYTE*)CRM_Message(NMM, SubM_Disc, &PeticionDiscCOpt);
-                    #endif
-                    #ifdef MIWI_0868_RI
-                    PeticionDiscCOpt.Transceiver = MIWI_0868;
-                    PeticionDiscCOpt.Param4 = &RSSIResultado868;
-                    CanalOptimo868 = *(BYTE*)CRM_Message(NMM, SubM_Disc, &PeticionDiscCOpt);
-                    #endif
-                    #ifdef MIWI_2400_RI
-                    PeticionDiscCOpt.Transceiver = MIWI_2400;
-                    PeticionDiscCOpt.Param4 = &RSSIResultado2400;
-                    CanalOptimo2400 = *(BYTE*)CRM_Message(NMM, SubM_Disc, &PeticionDiscCOpt);
-                    #endif
-                    if ((RSSIResultado434 <= RSSIResultado868) && (RSSIResultado434 <= RSSIResultado2400)) {
-                        CanalOptimo = CanalOptimo434;
-                        ri = MIWI_0434;
-                    } else if ((RSSIResultado868 < RSSIResultado434) && (RSSIResultado868 <= RSSIResultado2400)) {
-                        CanalOptimo = CanalOptimo868;
-                        ri = MIWI_0868;
-                    } else {
-                        CanalOptimo = CanalOptimo2400;
-                        ri = MIWI_2400;
-                    }
+                //Ahora calculo el canal óptimo de cada interfaz y el canal más óptimo de todos:
+                #ifdef MIWI_0434_RI
+                PeticionDiscCOpt.Transceiver = MIWI_0434;
+                PeticionDiscCOpt.Param4 = &RSSIResultado434;
+                CanalOptimo434 = *(BYTE*)CRM_Message(NMM, SubM_Disc, &PeticionDiscCOpt);
+                #endif
+                #ifdef MIWI_0868_RI
+                PeticionDiscCOpt.Transceiver = MIWI_0868;
+                PeticionDiscCOpt.Param4 = &RSSIResultado868;
+                CanalOptimo868 = *(BYTE*)CRM_Message(NMM, SubM_Disc, &PeticionDiscCOpt);
+                #endif
+                #ifdef MIWI_2400_RI
+                PeticionDiscCOpt.Transceiver = MIWI_2400;
+                PeticionDiscCOpt.Param4 = &RSSIResultado2400;
+                CanalOptimo2400 = *(BYTE*)CRM_Message(NMM, SubM_Disc, &PeticionDiscCOpt);
+                #endif
+                if ((RSSIResultado434 <= RSSIResultado868) && (RSSIResultado434 <= RSSIResultado2400)) {
+                    CanalOptimo = CanalOptimo434;
+                    ri = MIWI_0434;
+                } else if ((RSSIResultado868 < RSSIResultado434) && (RSSIResultado868 <= RSSIResultado2400)) {
+                    CanalOptimo = CanalOptimo868;
+                    ri = MIWI_0868;
+                } else {
+                    CanalOptimo = CanalOptimo2400;
+                    ri = MIWI_2400;
+                }
 
-                    BYTE ParametrosGT[] = {RSSIResultado434, CanalOptimo434, RSSIResultado868, CanalOptimo868, RSSIResultado2400, CanalOptimo2400, CanalOptimo};
-                    //Mandar la información del cambio de canal al resto de nodos.
-                    BYTE MensajeVCC[] = {VccCtrlMssg, SubM_Opt, ActProcRq, ProcCambioCanal, TRUE, ri};//Hay que cambiar esto
-                    #if defined NODE_1
-                        BYTE DireccionNodoDestino[] = {EUI_0, EUI_1, EUI_2, EUI_3, EUI_4, EUI_5, EUI_6 , 0x22};
-                    #elif defined NODE_2
-                        BYTE DireccionNodoDestino[] = {EUI_0, EUI_1, EUI_2, EUI_3, EUI_4, EUI_5, EUI_6 , 0x11};
-                    #endif
-                    MSN_MSSG_RCVD PeticionCambioCanal;
-                    VCC_MSSG_RCVD PeticionVCCCambioCanal;
+                BYTE ParametrosGT[] = {RSSIResultado434, CanalOptimo434, RSSIResultado868, CanalOptimo868, RSSIResultado2400, CanalOptimo2400, CanalOptimo};
+                //Mandar la información del cambio de canal al resto de nodos.
+                BYTE MensajeVCC[] = {VccCtrlMssg, SubM_Opt, ActProcRq, ProcCambioCanal, TRUE, ri};//Hay que cambiar esto
+                #if defined NODE_1
+                    BYTE DireccionNodoDestino[] = {EUI_0, EUI_1, EUI_2, EUI_3, EUI_4, EUI_5, EUI_6 , 0x22};
+                #elif defined NODE_2
+                    BYTE DireccionNodoDestino[] = {EUI_0, EUI_1, EUI_2, EUI_3, EUI_4, EUI_5, EUI_6 , 0x11};
+                #endif
+                MSN_MSSG_RCVD PeticionCambioCanal;
+                VCC_MSSG_RCVD PeticionVCCCambioCanal;
 
-                    PeticionVCCCambioCanal.Action = ActSend;
-                    PeticionVCCCambioCanal.BufferVCC = MensajeVCC;
-                    PeticionVCCCambioCanal.DirNodDest = DireccionNodoDestino;
-                    PeticionVCCCambioCanal.Transceiver = Peticion->Transceiver;
-                    BYTE sizeBufferVCC = 12;
-                    PeticionVCCCambioCanal.Param1 = &sizeBufferVCC;
+                PeticionVCCCambioCanal.Action = ActSend;
+                PeticionVCCCambioCanal.BufferVCC = MensajeVCC;
+                PeticionVCCCambioCanal.DirNodDest = DireccionNodoDestino;
+                PeticionVCCCambioCanal.Transceiver = Peticion->Transceiver;
+                BYTE sizeBufferVCC = 12;
+                PeticionVCCCambioCanal.Param1 = &sizeBufferVCC;
 
-                    PeticionCambioCanal.Peticion_Destino.PeticionVCC = &PeticionVCCCambioCanal;
+                PeticionCambioCanal.Peticion_Destino.PeticionVCC = &PeticionVCCCambioCanal;
 
-                    Printf("\r\nSe manda petición de cambio de canal al otro nodo.");
-                    CRM_Message(VCC, SubM_Ext, &PeticionCambioCanal);
+                Printf("\r\nSe manda petición de cambio de canal al otro nodo.");
+                CRM_Message(VCC, SubM_Ext, &PeticionCambioCanal);
 
-                    EstadoGT = EsperandoDecisionRestoNodos;
+                EstadoGT = EsperandoDecisionRestoNodos;
 
             }
             break;
@@ -932,6 +938,7 @@ BOOL CRM_Optm_Cons(OPTM_MSSG_RCVD *Peticion){
 
             CRM_Message(VCC, SubM_Ext, &PeticionCambioCanal);
 
+            EstadoGT = EsperandoDecisionFinal;
             }
             break;
 
