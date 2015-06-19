@@ -78,8 +78,7 @@ void limpiaBufferRX(void){
     BYTE recibido = GetPayloadToRead(ri);
     BYTE i;
     BYTE info;
-    BYTE *data;
-    data = &info;
+    BYTE *data = &info;
     if (recibido != 0){
         for (i = 0; i < recibido; i++){
             GetRXData(ri, data);
@@ -115,7 +114,6 @@ BOOL Rcvd_Buffer1(RECEIVED_MESSAGE *Buffer)
 
 void Recibir_info(void){
 
-    BYTE i, j;
     VCCMSSGTYPE CabeceraRxMssg;
 
     AppRXBuffer.Payload = BufferRx;
@@ -123,7 +121,7 @@ void Recibir_info(void){
     CtrlMssgFlag = FALSE;
     HayDatosApp = FALSE;
     EnviandoMssgApp = FALSE;
-    RecibiendoMssg = FALSE;
+    RecibiendoMssg = TRUE;
 
         if(Rcvd_Buffer1(&AppRXBuffer))
         {
@@ -145,7 +143,7 @@ void Recibir_info(void){
                         /*La direccion del nodo origen.*/
                         for(i = 0; i < MY_ADDRESS_LENGTH; i++)
                         {
-                            BufferRecepcionPrueba.SourceAddress[i] = AppRXBuffer.SourceAddress[i];
+                            *(BufferRecepcionPrueba.SourceAddress + i) = *(AppRXBuffer.SourceAddress + i);//Esto genera una excepcion.ASI????
                         }
                         /*El tamaño del payload del paquete recibido*/
                         BufferRecepcionPrueba.PayloadSize = AppRXBuffer.PayloadSize;
@@ -156,7 +154,7 @@ void Recibir_info(void){
 
                         for(i=0; i < AppRXBuffer.PayloadSize; i++)
                         {
-                            BufferRecepcionPrueba.Payload[i] = AppRXBuffer.Payload[i];
+                            BufferRecepcionPrueba.Payload[i] = AppRXBuffer.Payload[i];//Quizas tmb falle aqui.
                         }
                         CtrlMssgFlag = TRUE;
                     }

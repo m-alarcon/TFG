@@ -88,9 +88,9 @@ extern radioInterface ri;
     //Fin de optimizer de Elena.
 
     BYTE MSSG_PROC_OPTM = 0;
-    BYTE n_msg = 3; /*Numero de mensajes necesarios para cambiar de canal. Cambiar con el número que sea realmente*/
+    BYTE n_msg = 2; /*Numero de mensajes necesarios para cambiar de canal. Cambiar con el número que sea realmente*/
     WORD CosteCambio, CosteOcupado, CosteNoCambio;
-    BYTE EstadoGT;
+    OPTGTSTATE EstadoGT;
 
 /*****************************************************************************/
 /******************************FIN DE VARIABLES*******************************/
@@ -105,11 +105,9 @@ BOOL CRM_Optm_Mssg_Rcvd(OPTM_MSSG_RCVD *Peticion)
 {
     switch(Peticion->Action)
     {
-            //#if !defined(TEST4) //CLEAN
         case(ActGameTh):
             CRM_Optm_GameTheory(Peticion);
             break;
-//#endif
         case(ActProcRq):
             CRM_Optm_Processor(Peticion);
             break;
@@ -341,20 +339,20 @@ NOACEPTA: //Si no queremos notifcar el no cambio comentariamos y dejaríamos solo
         {
             Printf("\r\nSe ha recibido petición de cambio de canal del otro nodo.");
             REPO_MSSG_RCVD PeticionRepoRTx;
-            BYTE num_RTx;
             BYTE canal = GetOpChannel(Peticion->Transceiver);
             PeticionRepoRTx.Action = ActSndDta;
             PeticionRepoRTx.DataType = EnvRTx;
             PeticionRepoRTx.Param1 = &canal;
+            PeticionRepoRTx.Transceiver = Peticion->Transceiver;
 
             CRM_Message(NMM, SubM_Repo, &PeticionRepoRTx);
 
-            BOOL cambio = CRM_Optm_Calcular_Costes(num_RTx);
+            BOOL cambio = CRM_Optm_Calcular_Costes(*(BYTE*)(PeticionRepoRTx.Param2));
 
             if(cambio == TRUE){
                 //Notifico al otro nodo que quiero cambiar de canal y hago 4)
                 //Mandar la información del cambio de canal al resto de nodos.
-                BOOL MensajeVCC[] = {VccCtrlMssg, SubM_Opt, ActProcRq, ProcRespCambio, TRUE};
+                BOOL MensajeVCC[] = {VccCtrlMssg, SubM_Opt, ActProcRq, ProcRespCambio, TRUE, ri};
                 #if defined NODE_1
                     BYTE DireccionNodoDestino[] = {EUI_0, EUI_1, EUI_2, EUI_3, EUI_4, EUI_5, EUI_6 , 0x22};
                 #elif defined NODE_2
@@ -383,7 +381,7 @@ NOACEPTA: //Si no queremos notifcar el no cambio comentariamos y dejaríamos solo
 
             } else {
                 //Notifico al otro nodo que no quiero cambiar.
-                BOOL MensajeVCC[] = {VccCtrlMssg, SubM_Opt, ActProcRq, ProcRespCambio, FALSE};
+                BYTE MensajeVCC[] = {VccCtrlMssg, SubM_Opt, ActProcRq, ProcRespCambio, FALSE, ri};
                 #if defined NODE_1
                     BYTE DireccionNodoDestino[] = {EUI_0, EUI_1, EUI_2, EUI_3, EUI_4, EUI_5, EUI_6 , 0x22};
                 #elif defined NODE_2
@@ -393,7 +391,7 @@ NOACEPTA: //Si no queremos notifcar el no cambio comentariamos y dejaríamos solo
                 VCC_MSSG_RCVD PeticionVCCCambioCanal;
 
                 PeticionVCCCambioCanal.Action = ActSend;
-                PeticionVCCCambioCanal.BufferVCC = &MensajeVCC;
+                PeticionVCCCambioCanal.BufferVCC = MensajeVCC;
                 PeticionVCCCambioCanal.DirNodDest = DireccionNodoDestino;
                 PeticionVCCCambioCanal.Transceiver = Peticion->Transceiver;
                 BYTE sizeBufferVCC = 5;
@@ -407,7 +405,15 @@ NOACEPTA: //Si no queremos notifcar el no cambio comentariamos y dejaríamos solo
             }
         case ProcRespCambio:
         {//Aquí voy a ver si el nodo ha aceptado la petición de cambio de canal y va a esperar a que le envíe el mensaje con el canal al que cambiar
+            if(EstadoGT == EsperandoDecisionRestoNodos){
+                #if defined NODE_1
+                //Contar todas las respuestas que recibe hasta que sean igual que el número de nodos conectados.
+                #else
+                if(Peticion.)
+                EstadoGT =
+                #endif
 
+            }
 
         }
         default:
@@ -571,7 +577,7 @@ BOOL CRM_Optm_Init(void)
         CosteTx = CosteTxXDefecto;
         CosteRx = CosteRxXDefecto;
         CosteSensing = CosteSensingXDefecto;
-        EstadoGT = Idle;
+        EstadoGT = Clear;
         CtrlMssgFlag = FALSE;
        // NumMsj = numMsjXDefecto; //Este es mi "espacio muestral" de los mensajes
             //que tengo en cuenta para realizar los calculos.
@@ -827,14 +833,13 @@ BOOL CRM_Optm_Cons(OPTM_MSSG_RCVD *Peticion){
                         ri = MIWI_2400;
                     }
 
+                    BYTE ParametrosGT[] = {RSSIResultado434, CanalOptimo434, RSSIResultado868, CanalOptimo868, RSSIResultado2400, CanalOptimo2400, CanalOptimo};
                     //Mandar la información del cambio de canal al resto de nodos.
-                    BYTE MensajeVCC[] = {VccCtrlMssg, SubM_Opt, ActProcRq, ProcCambioCanal, RSSIResultado434, CanalOptimo434, RSSIResultado868, CanalOptimo868, RSSIResultado2400, CanalOptimo2400, CanalOptimo, ri};
+                    BYTE MensajeVCC[] = {VccCtrlMssg, SubM_Opt, ActProcRq, ProcCambioCanal, TRUE, ri};//Hay que cambiar esto
                     #if defined NODE_1
                         BYTE DireccionNodoDestino[] = {EUI_0, EUI_1, EUI_2, EUI_3, EUI_4, EUI_5, EUI_6 , 0x22};
-                        //BYTE DireccionNodoPropio[] = {EUI_0, EUI_1, EUI_2, EUI_3, EUI_4, EUI_5, EUI_6 , EUI_7};
                     #elif defined NODE_2
                         BYTE DireccionNodoDestino[] = {EUI_0, EUI_1, EUI_2, EUI_3, EUI_4, EUI_5, EUI_6 , 0x11};
-                        //BYTE DireccionNodoPropio[] = {EUI_0, EUI_1, EUI_2, EUI_3, EUI_4, EUI_5, EUI_6 , EUI_7};
                     #endif
                     MSN_MSSG_RCVD PeticionCambioCanal;
                     VCC_MSSG_RCVD PeticionVCCCambioCanal;
@@ -847,7 +852,6 @@ BOOL CRM_Optm_Cons(OPTM_MSSG_RCVD *Peticion){
                     PeticionVCCCambioCanal.Param1 = &sizeBufferVCC;
 
                     PeticionCambioCanal.Peticion_Destino.PeticionVCC = &PeticionVCCCambioCanal;
-                    //PeticionCambioCanal.DireccionEUI = DireccionNodoPropio;
 
                     Printf("\r\nSe manda petición de cambio de canal al otro nodo.");
                     CRM_Message(VCC, SubM_Ext, &PeticionCambioCanal);
@@ -906,8 +910,9 @@ BOOL CRM_Optm_Cons(OPTM_MSSG_RCVD *Peticion){
                 ri = MIWI_2400;
             }
 
+            BYTE ParametrosGT[] = {RSSIResultado434, CanalOptimo434, RSSIResultado868, CanalOptimo868, RSSIResultado2400, CanalOptimo2400, CanalOptimo};
             //Mandar la información del cambio de canal al resto de nodos.
-            BYTE MensajeVCC[] = {VccCtrlMssg, SubM_Opt, ActProcRq, ProcRespCambio, RSSIResultado434, CanalOptimo434, RSSIResultado868, CanalOptimo868, RSSIResultado2400, CanalOptimo2400, CanalOptimo, ri};
+            BYTE MensajeVCC[] = {VccCtrlMssg, SubM_Opt, ActProcRq, ProcRespCambio, TRUE, ri};//Hay que mandar parametros GT no TRUE
             #if defined NODE_1
                 BYTE DireccionNodoDestino[] = {EUI_0, EUI_1, EUI_2, EUI_3, EUI_4, EUI_5, EUI_6 , 0x22};
             #elif defined NODE_2
@@ -926,6 +931,7 @@ BOOL CRM_Optm_Cons(OPTM_MSSG_RCVD *Peticion){
             PeticionCambioCanal.Peticion_Destino.PeticionVCC = &PeticionVCCCambioCanal;
 
             CRM_Message(VCC, SubM_Ext, &PeticionCambioCanal);
+
             }
             break;
 
@@ -1045,14 +1051,14 @@ BOOL CRM_Optm_Int(void)
             Printf("\r\nSe ha incluido la potencia del ultimo paquete");
         }
 #if defined NODE_2
-        if (EstadoGT == Idle){
+        if (EstadoGT == Clear){
             REPO_MSSG_RCVD PeticionRepoPotencias;
             PeticionRepoPotencias.Action = ActSndDta;
             PeticionRepoPotencias.DataType = EnvPotencias;
 
             CRM_Message(NMM, SubM_Repo, &PeticionRepoPotencias);
 
-            BOOL inicioCambio = CRM_Optm_Inicio_GT(PeticionRepoPotencias.Param1);//ASI??
+            BOOL inicioCambio = CRM_Optm_Inicio_GT(PeticionRepoPotencias.Param1);
             if (inicioCambio){
                 OPTM_MSSG_RCVD PeticionInicioCambio;
                 PeticionInicioCambio.Action = SubActCambio;

@@ -76,7 +76,7 @@ typedef enum _OPTSTATMACH
 
 typedef enum _OPTGTSTATE
 {
-    EsperandoDecisionRestoNodos = 0x01, ComunicarDecFinal
+    Clear = 0x00, EsperandoDecisionRestoNodos = 0x01, ComunicarDecFinal
 } OPTGTSTATE;
 
 /*La estructura de los parametros del Mensaje con destino este modulo.*/
