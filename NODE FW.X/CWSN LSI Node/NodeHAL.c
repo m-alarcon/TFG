@@ -3147,9 +3147,9 @@ BYTE GetRXSourceAddr(radioInterface ri, BYTE *storeItFromHere){
  * Parametros: La interfaz radio, el puntero al buffer y la direccion.
  *
  * NOTA:
- *
+ * CAMBIO(malarcon): añadida posibilidad de enviar el mensaje de control a broadcast.
  */
-BYTE Send_Buffer(radioInterface ri, BYTE *Buffer, BYTE *Address, BYTE sizeOfBuffer)
+BYTE Send_Buffer(radioInterface ri, BYTE *Buffer, BYTE AddrMode, BYTE *Address, BYTE sizeOfBuffer)
 {
     BYTE i, j;
     i = 0;
@@ -3162,7 +3162,11 @@ BYTE Send_Buffer(radioInterface ri, BYTE *Buffer, BYTE *Address, BYTE sizeOfBuff
             i++;
         }
     }
-    i = SendPckt(ri, LONG_MIWI_ADDRMODE, Address);
+    if (AddrMode == BROADCAST_ADDRMODE){
+        i = SendPckt(ri, AddrMode, NULL);
+    } else {
+        i = SendPckt(ri, LONG_MIWI_ADDRMODE, Address);
+    }
     //Printf("\r\nBuffer enviado: ");
     Printf("\r\nMensaje de control enviado: ");
     if (i == 0) {

@@ -57,10 +57,10 @@ typedef enum _VCCMSSGTYPE
     VccCtrlMssg = 0x01
 } VCCMSSGTYPE;
 
-//El tipo de mensaje que ha recibido/envia. Si es de control con cabecera 0x01
+//El tipo de mensaje que ha recibido/envia. Si es de control con cabecera 0x01 /////MODIFICADO malarcon
 typedef enum _VCCMSSGPARSING
 {
-    CtrlMssgField = 0x00, SubMDestField = 0x01, SubMDestActField, SubMOptParam1Field, SubMOptParam2Field, SubMOptParamTransceiver
+    CtrlMssgField = 0x00, SubMDestField = 0x01, SubMDestActField, SubMDestParam1Field, SubMDestParam2Field, SubMDestParam3Field, SubMDestParam4Field, SubMDestParamTransceiver
 } VCCMSSPARSING;
 
 
@@ -69,6 +69,7 @@ typedef struct _VCC_MSSG_RCVD
 {
     INPUT BYTE *DirNodDest;
     INPUT VCCACTION Action;
+    INPUT BYTE AddrMode;
     INPUT void *BufferVCC;
     INPUT radioInterface Transceiver;
     INPUT void *Param1;/*Por ejemplo para decirle el tamaño del envio o de la

@@ -133,8 +133,6 @@
       <itemPath>CWSN LSI Node/NodeHAL.c</itemPath>
       <itemPath>DataClustering.c</itemPath>
       <itemPath>DataClustering.h</itemPath>
-      <itemPath>Consumo.c</itemPath>
-      <itemPath>Consumo.h</itemPath>
       <itemPath>Aplicacion.c</itemPath>
       <itemPath>Aplicacion.h</itemPath>
     </logicalFolder>

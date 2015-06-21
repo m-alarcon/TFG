@@ -13,9 +13,7 @@
 #include "CWSN LSI Node/Include/NodeHAL.h"
 #include "CWSN LSI Node/Include/WirelessProtocols/Console.h"
 #include "DataClustering.h"    //Pruebas
-#include "Consumo.h"
     
-int i = 0;
 #if defined MIWI_2400_RI
 radioInterface ri3 = MIWI_2400;
 BYTE NumChannels3 = MIWI2400NumChannels;
@@ -39,6 +37,8 @@ BYTE NumChannels1 = MIWI0434NumChannels;
 BYTE powerStep1 = 32;
 BYTE ri_RI_MASK1 = MIWI_0434_RI_MASK;
 #endif
+
+radioInterface riActual = MIWI_0434;
 
 void InitAppVariables() {
     //Si las hubiera...
@@ -158,7 +158,7 @@ INIT_STAGE:
         //goto SAVE_RESTORE;
         //goto POWER_DISSIPATION_TEST;
         //goto DEMO_PFC_AGUS;
-        //goto STAGE02;
+        //goto STAGE04;
         //goto CRMODULE_TEST;
         goto DC_TEST;
 
@@ -306,7 +306,7 @@ INIT_STAGE:
                 break;
         
         STAGE04:        //REESCANEO DE CANALES.
-        
+        {
         //           Printf("\r\nCambio a un canal permitido (canal 1).");
         //            i = SetChannel(ri, 1);       //Pone un canal permitido.
         //         while(TRUE){
@@ -322,7 +322,7 @@ INIT_STAGE:
         //        SWDelay(5000);
         //    }
                 //Reescaneoç
-        
+        /*
                 coreTMRvals[0] = ReadCoreTimer();
                 i = DoChannelScanning(MIWI_0434, &k);
                 coreTMRvals[1] = ReadCoreTimer();
@@ -342,53 +342,63 @@ INIT_STAGE:
                 ConsolePut('\r');
         
                 goto STAGE04;
-        
-                i = DoChannelScanning(ri, &k);
-                Printf("\r\n\nCanal con menor ruido: ");
-                PrintDec(i);
-                Printf("   RSSI: ");
-                PrintChar(k);
-        
+        */        
+                //SWDelay(1000);
+                BYTE RSSICanales;
+                Printf("\r\nEscaneo de todas las interfaces:\r");
+                BYTE canaloptimo = DoChannelScanning(ALL_MIWI, &k);
+
+                Printf("\r\n\nEscaneo del ruido en la interfaz de 434.");
                 for(i=0; i<NumChannels; i++){
                     Printf("\r\nCanal: ");
                     PrintDec(i);
                     Printf("    RSSI: ");
-                    j = GetScanResult(ri, i, &k);
-                    (j) ? Printf("Error"): PrintChar(k);
+                    j = GetScanResult(ri, i, &RSSICanales);
+                    (j) ? Printf("Error"): PrintChar(RSSICanales);
                 }
-        
-                i = GetStatusFlags();
-                Printf("\r\n(Comprobacion) StatusFlags: ");
-                PrintChar(i);
-        
-                SWDelay(1000);
-        
-                Printf("\r\nEscaneo de todas las interfaces:\r");
-                i = DoChannelScanning(ALL_MIWI, &k);
+
+                Printf("\r\n\nEscaneo del ruido en la interfaz de 868.");
+                for(i=0; i<MIWI0868NumChannels; i++){
+                    Printf("\r\nCanal: ");
+                    PrintDec(i);
+                    Printf("    RSSI: ");
+                    j = GetScanResult(ri2, i, &RSSICanales);
+                    (j) ? Printf("Error"): PrintChar(RSSICanales);
+                }
+
+                Printf("\r\n\nEscaneo del ruido en la interfaz de 2400.");
+                for(i=0; i<MIWI2400NumChannels; i++){
+                    Printf("\r\nCanal: ");
+                    PrintDec(i);
+                    Printf("    RSSI: ");
+                    j = GetScanResult(ri3, i, &RSSICanales);
+                    (j) ? Printf("Error"): PrintChar(RSSICanales);
+                }
+
                 if(k == MIWI_0434_RI_MASK){
                     Printf("\r\nMiWi a 434 MHz es la interfaz con el canal menos ruidoso."
                            " Canal: ");
-                    PrintDec(i);
+                    PrintDec(canaloptimo);
                     Printf("   RSSI: ");
-                    GetScanResult(MIWI_0434, i, &k);
+                    GetScanResult(MIWI_0434, canaloptimo, &k);
                     PrintChar(k);
                 }else if(k == MIWI_0868_RI_MASK){
                     Printf("\r\nMiWi a 868 MHz es la interfaz con el canal menos ruidoso."
                            " Canal: ");
-                    PrintDec(i);
+                    PrintDec(canaloptimo);
                     Printf("   RSSI: ");
-                    GetScanResult(MIWI_0868, i, &k);
+                    GetScanResult(MIWI_0868, canaloptimo, &k);
                     PrintChar(k);
                 }else{
                     Printf("\r\nMiWi a 2,4 GHz es la interfaz con el canal menos ruidoso."
                            " Canal: ");
-                    PrintDec(i);
+                    PrintDec(canaloptimo);
                     Printf("   RSSI: ");
-                    GetScanResult(MIWI_2400, i, &k);
+                    GetScanResult(MIWI_2400, canaloptimo, &k);
                     PrintChar(k);
                 }
                 goto FINAL_STAGE;
-        
+        }
         STAGE05:    //BUFFERS DE TX Y RX. ENVIO, RECEPCION Y COMPROBACION DE UN PAQUETE BROADCAST.
         
                 #if defined NODE_1
@@ -1337,8 +1347,7 @@ CRMODULE_TEST:
 
 DC_TEST:
 
-        ri = MIWI_0868;
-        Enviar_Paquete_Datos_App(ri, LONG_MIWI_ADDRMODE, &EUINodoExt);
+        Enviar_Paquete_Datos_App(riActual, LONG_MIWI_ADDRMODE, &EUINodoExt);
         Recibir_info();
 
         SWDelay(1000);

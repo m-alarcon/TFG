@@ -29,7 +29,6 @@
 
 #include "CRModule/CRModule.h"
 #include "CRModule/VCC/VCC.h"
-#include "Consumo.h"
 #include <math.h>
 
 #ifndef DATACLUSTERING_H

@@ -252,6 +252,9 @@ void CRM_Repo_NodoPropio(REPO_MSSG_RCVD *Peticion)
                 }
             }
             break;
+        case EnvRTx:
+            CRM_Repo_NRTx(*((BYTE*)(Peticion->Param1)),*((BYTE*)(Peticion->Param2)), *((BYTE*)(Peticion->Param3)));
+            break;
         default:
             break;
     }
@@ -299,6 +302,13 @@ BOOL CRM_Repo_NodosRed(REPO_MSSG_RCVD *Peticion)
 //                        }
 #endif
                         break;
+                    case RSSINetNode:
+                        //Le he pasado en Param2 el vector con todos los RSSI.
+                        //Formato: RSSIResultado434, CanalOptimo434, RSSIResultado868, CanalOptimo868, RSSIResultado2400, CanalOptimo2400, CanalOptimo, ri
+                        break;
+                    case CambiosAceptados:
+
+                        break;
                     case AllNetNode:
                         break;
                     default:
@@ -307,15 +317,6 @@ BOOL CRM_Repo_NodosRed(REPO_MSSG_RCVD *Peticion)
         }
     }
 
-//Copiamos la tabla de conexiones en el init
-//    /*Copia de la tabla de conexiones*/
-//        for( i=0; i < CONNECTION_SIZE; i++)
-//        {
-//            Repo_Conn_Table[i] = ConnectionTable[i];
-//        }
-//    /*Fin de la tabla de conexiones.*/
-    
-/*Info de la hora*/
     RtccGetTimeDate(&RepoNodRedTime, &RepoNodRedDate);
 /*Fin info de la hora*/
     return TRUE;
@@ -348,7 +349,17 @@ void CRM_Repo_Env(BYTE canal, BYTE InfoRSSI)
 }
 
 void CRM_Repo_NRTx(BYTE n_rtx, BYTE canal, radioInterface ri){
-    
+    switch(ri){
+        case MIWI_0434:
+            MIWI434_rtx[canal] = n_rtx;
+            break;
+        case MIWI_0868:
+            MIWI868_rtx[canal] = n_rtx;
+            break;
+        case MIWI_2400:
+            MIWI2400_rtx[canal] = n_rtx;
+            break;
+    }
 }
 
 //PRUEBA TEST5

@@ -59,7 +59,7 @@ typedef enum _REPOSUBDATAOWNNODE
 //Sub-NetNode
 typedef enum _REPOSUBDATANETNODE
 {
-    AdditionalNetNode = 0x01, AllNetNode = 0x10
+    AdditionalNetNode = 0x01, AllNetNode = 0x10, RSSINetNode, CambiosAceptados
 } REPOSUBDATANETNODE;
 
 //Sub-NetNode
@@ -212,6 +212,7 @@ void CRM_Repo_NodoPropio(REPO_MSSG_RCVD *Peticion);
 BOOL CRM_Repo_NodosRed(REPO_MSSG_RCVD *Peticion);
 void CRM_Repo_NodosEnv(void);
 void CRM_Repo_Env(BYTE canal, BYTE InfoRSSI);
+void CRM_Repo_NRTx(BYTE n_rtx, BYTE canal, radioInterface ri);
 /*Fin de funciones de I/O de datos*/
 
 /*Funciones de inicializacion*/

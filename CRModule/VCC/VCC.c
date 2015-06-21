@@ -110,7 +110,7 @@ BOOL CRM_VCC_Sender(VCC_MSSG_RCVD *Peticion)
 {
     BOOL salida;
     //TODO REVISAR la composicion del mensaje saliente.
-    salida = Send_Buffer(Peticion->Transceiver, Peticion->BufferVCC,
+    salida = Send_Buffer(Peticion->Transceiver, Peticion->BufferVCC, Peticion->AddrMode,
             Peticion->DirNodDest, *((BYTE*)(Peticion->Param1)));
     return salida;
 }
@@ -122,13 +122,7 @@ BOOL CRM_VCC_MssgCreator(INPUT RECEIVED_MESSAGE *Buffer)
 {
     //TODO en vez de optm aqui tiene que ser del messenger.
     MSN_MSSG_RCVD PeticionGeneral;
-//    void* Peticion4SubMDest;
-    DISC_MSSG_RCVD Peticion4Disc;
-    EXEC_MSSG_RCVD Peticion4Exec;
-//    OPTM_MSSG_RCVD Peticion4Optm;
-    REPO_MSSG_RCVD Peticion4Repo;
-    POLI_MSSG_RCVD Peticion4Poli;
-    ACCCTRL_MSSG_RCVD Peticion4AccCtrl;
+
     switch(Buffer->Payload[SubMDestField])
     {
         case SubM_Disc: /*Para Discovery.*/
@@ -142,27 +136,37 @@ BOOL CRM_VCC_MssgCreator(INPUT RECEIVED_MESSAGE *Buffer)
             /*Preparamos el Message (para Messenger) y que embeba la peticion para
              el sub-modulo destino.*/
             OPTM_MSSG_RCVD Peticion4Optm;
-//            Peticion4SubMDest = &Peticion4Optm;
-//            PeticionGeneral.Peticion_Destino.PeticionOptm = Peticion4SubMDest;
             PeticionGeneral.Peticion_Destino.PeticionOptm = &Peticion4Optm;
             PeticionGeneral.DireccionEUI = Buffer->SourceAddress;
             Peticion4Optm.Action = Buffer->Payload[SubMDestActField];
-            Peticion4Optm.Param1 = Buffer->Payload + SubMOptParam1Field;
-            Peticion4Optm.Param2 = Buffer->Payload + SubMOptParam2Field;
-            Peticion4Optm.Transceiver = Buffer->Payload[SubMOptParamTransceiver];
+            Peticion4Optm.Param1 = Buffer->Payload + SubMDestParam1Field;
+            Peticion4Optm.Param2 = Buffer->Payload + SubMDestParam2Field;
+            Peticion4Optm.Transceiver = Buffer->Payload[SubMDestParamTransceiver];
             Peticion4Optm.EUINodo = Buffer->SourceAddress;
-//            ((OPTM_MSSG_RCVD*)Peticion4SubMDest)->Action = Buffer->Payload[SubMDestActField];
-//            ((OPTM_MSSG_RCVD*)Peticion4SubMDest)->Param1 = Buffer->Payload + SubMOptParam1Field;
-//            ((OPTM_MSSG_RCVD*)Peticion4SubMDest)->Param2 = Buffer->Payload + SubMOptParam2Field;
-//            ((OPTM_MSSG_RCVD*)Peticion4SubMDest)->EUINodo = Buffer->Payload + SubMOptEUIField; //Esto lo tenía así en el TEST5
-//            ((OPTM_MSSG_RCVD*)Peticion4SubMDest)->EUINodo = Buffer->SourceAddress;
             /*Y enviamos el Message al sub-modulo (a traves de Messenger.*/
             CRM_Message(VCC, SubM_Opt, &PeticionGeneral);
             break;
         }
         case SubM_Repo: /*Para Repository.*/
-            CRM_Message(VCC, SubM_Repo, Buffer + 1);
+        {                /*Preparamos el Message (para Messenger) y que embeba la peticion para
+             el sub-modulo destino.*/
+            REPO_MSSG_RCVD Peticion4Repo;
+            BYTE i;
+            BYTE Buffer4Repo[Buffer->PayloadSize - SubMDestParam3Field];
+            PeticionGeneral.Peticion_Destino.PeticionRepo = &Peticion4Repo;
+            PeticionGeneral.DireccionEUI = Buffer->SourceAddress;
+            Peticion4Repo.Action = Buffer->Payload[SubMDestActField];
+            Peticion4Repo.DataType = Buffer->Payload[SubMDestParam1Field];
+            Peticion4Repo.Param1 = &Buffer->Payload[SubMDestParam2Field];
+            for (i = SubMDestParam3Field; i < Buffer->PayloadSize; i++){
+                Buffer4Repo[i-SubMDestParam2Field] = *(Buffer->Payload + i);
+            }
+            Peticion4Repo.Param2 = &Buffer4Repo;
+            Peticion4Repo.EUINodo = Buffer->SourceAddress;
+            /*Y enviamos el Message al sub-modulo (a traves de Messenger.*/
+            CRM_Message(VCC, SubM_Repo, &PeticionGeneral);
             break;
+        }
         case SubM_Poli: /*Para Policies.*/
             CRM_Message(VCC, SubM_Poli, Buffer + 1);
             break;

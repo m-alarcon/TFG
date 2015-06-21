@@ -57,7 +57,7 @@ typedef enum _OPTSUBACTION
 
 typedef enum _OPTPROCACTION
 {
-    ProcAsk4Chng = 0x01, ProcChangAnsw, ProcCambioCanal, ProcRespCambio
+    ProcAsk4Chng = 0x01, ProcChangAnsw, ProcCambioCanal, ProcRespCambio, ProcDecFinal
 } OPTPROCACTION;
 
 
