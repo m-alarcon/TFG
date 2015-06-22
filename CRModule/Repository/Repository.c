@@ -82,6 +82,9 @@ BOOL CRM_Repo_Store(REPO_MSSG_RCVD *Peticion)
         case(IncluirPotencia):
             CRM_Repo_NodoPropio(Peticion);
             break;
+        case(AddMsg):
+            CRM_Repo_Mensajes_Intercambiados((*Peticion).Param1);
+            break;
         default:
             break;
     }
@@ -94,7 +97,7 @@ BOOL CRM_Repo_SendDat(REPO_MSSG_RCVD *Peticion)
         OUTPUT BYTE valor = 44;
         (*Peticion).Param1 = &valor;
     #endif
-
+    BYTE i;
     //PRUEBA TODO en el final hay que hacerlo bien clasificando las acciones y tal.
     switch (Peticion->DataType)
     {
@@ -138,6 +141,13 @@ BOOL CRM_Repo_SendDat(REPO_MSSG_RCVD *Peticion)
                 case MIWI_2400:
                     Peticion->Param2 = &MIWI2400_rtx[*((BYTE*) (Peticion->Param1))];
                     break;
+            }
+            break;
+        case EnvNMsg:
+            for(i = 0; i < CONNECTION_SIZE; i++){
+                if(isSameAddress(Peticion->Param1, Repo_Conn_Table[i].Address)){
+                    Peticion->Param2 = &Repo_Conn_Table[i].PeerInfo[0];
+                }
             }
             break;
         default:
@@ -373,6 +383,17 @@ void CRM_Repo_NRTx(BYTE n_rtx, BYTE canal, radioInterface ri){
     }
 }
 
+void CRM_Repo_Mensajes_Intercambiados(BYTE *Address)
+{
+    BYTE i;
+    for(i = 0; i < CONNECTION_SIZE; i++){
+        if(isSameAddress(Address, Repo_Conn_Table[i].Address)){
+            Repo_Conn_Table[i].PeerInfo[0]++;
+            break;
+        }
+    }
+}
+
 //PRUEBA TEST5
 void CRM_Repo_ProbCambio(BYTE Valor)
 {
@@ -404,6 +425,11 @@ BOOL CRM_Repo_Init(void)
     /*Inicialización vector potencias*/
     for (i = 0; i < MAX_VECTOR_POTENCIA; i++){
         vectorPotencias[i] = 0xFF;
+    }
+
+    /*Inicialización número mensajes intercambiados*/
+    for(i = 0; i < CONNECTION_SIZE; i++){
+
     }
 
     /*Inicialización tablas de retransmisiones*/

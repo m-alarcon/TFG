@@ -396,7 +396,7 @@ NOACEPTA: //Si no queremos notifcar el no cambio comentariamos y dejaríamos solo
                     CRM_Message(VCC, SubM_Ext, &PeticionCambioCanal);
 
                     EstadoGT = Clear;
-                    SWDelay(10000);
+                    //SWDelay(10000);
                     CHNG_MSSG_RCVD = 0;
                 }
             }
@@ -406,11 +406,8 @@ NOACEPTA: //Si no queremos notifcar el no cambio comentariamos y dejaríamos solo
         {//Aquí voy a ver si el nodo ha aceptado la petición de cambio de canal y va a esperar a que le envíe el mensaje con el canal al que cambiar
             Printf("\r\nSe ha recibido la respuesta al cambio de canal.");
             if(EstadoGT == EsperandoDecisionRestoNodos){
-                #if defined NODE_1
-                //Contar todas las respuestas que recibe hasta que sean igual que el número de nodos conectados.
-                //Cuando se han recibido todas las respuestas manda un mensaje a todos comunicando la decisión final.
                 if(*((BYTE*)(Peticion->Param2)) == TRUE){
-                        Printf("\r\nTodos los nodos han aceptado cambiar de canal.");
+                        Printf("\r\nOtro nodo ha aceptado cambiar de canal.");
                         //Mandar mensaje al resto de nodos confirmando que se va a cambiar de canal
                         MSN_MSSG_RCVD RespuestaCambioCanal;
                         VCC_MSSG_RCVD RespuestaVCCCambioCanal;
@@ -426,8 +423,7 @@ NOACEPTA: //Si no queremos notifcar el no cambio comentariamos y dejaríamos solo
 
                         CRM_Message(VCC, SubM_Ext, &RespuestaCambioCanal);
 
-                        EstadoGT = EsperandoDecisionFinal;                        
-                    }
+                        EstadoGT = EsperandoCanalCambio;
                 } else {
                     Printf("\r\nSe ha decidido no cambiar de canal.");
                     MSN_MSSG_RCVD PeticionCambioCanal;
@@ -448,24 +444,13 @@ NOACEPTA: //Si no queremos notifcar el no cambio comentariamos y dejaríamos solo
                     CHNG_MSSG_RCVD = 0;
                 }
 
-                #else
-                if(*((BYTE*)(Peticion->Param2)) == TRUE){
-                    EstadoGT = EsperandoDecisionFinal;
-                    Printf("\r\nEl AP ha decidido cambiar de canal.");
-                } else {
-                    EstadoGT = Clear;
-                    CHNG_MSSG_RCVD = 0;
-                    Printf("\r\nSe ha decidido no cambiar de canal.");
-                }
-                #endif
-
-            } else if (EstadoGT == EsperandoDecisionFinal){
+            } else if (EstadoGT == EsperandoCanalCambio){
                 //if (Peticion.Param1)
             }
         }
         case ProcDecFinal:
             //Aqui va a coger el mensaje que le llega y va a cambiar al canal y la ri que le han mandado.
-            if(EstadoGT == EsperandoDecisionFinal){
+            if(EstadoGT == EsperandoCanalCambio){
                 EXEC_MSSG_RCVD PeticionExec;
                 PeticionExec.OrgModule = SubM_Opt;
                 PeticionExec.Action = ActChnHop;
@@ -1005,7 +990,7 @@ BOOL CRM_Optm_Cons(OPTM_MSSG_RCVD *Peticion){
 
             CRM_Message(VCC, SubM_Ext, &PeticionCambioCanal);
 
-            EstadoGT = EsperandoDecisionFinal;
+            EstadoGT = EsperandoCanalCambio;
             }
             break;
             }
@@ -1097,7 +1082,23 @@ BOOL CRM_Optm_Int(void)
             //optimizer.
             
     if(WhichRIHasData() != 0x00 && MSSG_PROC_OPTM == 0){
-        //Cada vez que entramos incluimos la potencia del paquete que hemos recibido
+        //Cada vez que entramos incluimos la potencia del paquete que hemos recibido y sumamos 1 al número de mensajes intercambiados con ese nodo.
+        BYTE Direccion[MY_ADDRESS_LENGTH];
+        BYTE err;
+        err = GetRXSourceAddr(riActual, Direccion);
+        if (err & 0x80) {
+            Printf("\r\nError al obtener la dirección: ");
+            PrintChar(err);
+            return FALSE;
+        } else {
+            REPO_MSSG_RCVD PeticionRepoMssg;
+            PeticionRepoMssg.Action = ActStr;
+            PeticionRepoMssg.DataType = AddMsg;
+            PeticionRepoMssg.Param1 = Direccion;
+
+            CRM_Message(NMM, SubM_Repo, &PeticionRepoMssg);
+        }
+        
         BOOL i = CRM_Optm_Incluir_Potencia();
         if (i == FALSE){
             Printf("\r\nHa habido un error al incluir la potencia del ultimo paquete");

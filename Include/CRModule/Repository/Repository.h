@@ -46,7 +46,7 @@ typedef enum _REPACTION
 
 typedef enum _REPODATATYPE
 {
-    OwnNode = 0x01, NetNode, EnvNode, Enviro, EnvPotencias, IncluirPotencia, EnvRTx, AllInfo = 0x10
+    OwnNode = 0x01, NetNode, EnvNode, Enviro, EnvPotencias, IncluirPotencia, AddMsg, EnvRTx, EnvNMsg, AllInfo = 0x10
 } REPODATATYPE;
 
 /*Los sub-tipos de datos para cada tipo de dato*/
@@ -130,7 +130,7 @@ BYTE MIWI2400_RSSI_values[MIWI2400NumChannels];
 
 BYTE CanalOptimo;
 radioInterface riCanalOptimo;
-LONG NumMssgIntercambiados;
+LONG NumMssgIntercambiados[CONNECTION_SIZE];
 
 /*Del Propio nodo*/
     //La direccion larga.
@@ -215,6 +215,7 @@ BOOL CRM_Repo_NodosRed(REPO_MSSG_RCVD *Peticion);
 void CRM_Repo_NodosEnv(void);
 void CRM_Repo_Env(BYTE canal, BYTE InfoRSSI);
 void CRM_Repo_NRTx(BYTE n_rtx, BYTE canal, radioInterface ri);
+void CRM_Repo_Mensajes_Intercambiados(BYTE *Address);
 /*Fin de funciones de I/O de datos*/
 
 /*Funciones de inicializacion*/
