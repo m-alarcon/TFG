@@ -909,17 +909,10 @@ BOOL CRM_Optm_Cons(OPTM_MSSG_RCVD *Peticion){
                 MSN_MSSG_RCVD PeticionCambioCanal;
                 VCC_MSSG_RCVD PeticionVCCCambioCanal;
                 BYTE MensajeVCC[] = {VccCtrlMssg, SubM_Repo, ActStr, NetNode, RSSINetNode, RSSIResultado434, CanalOptimo434, RSSIResultado868, CanalOptimo868, RSSIResultado2400, CanalOptimo2400, CanalOptimo, ri, riActual};
-                #if defined NODE_1
-                    BYTE DireccionNodoDestino[] = {EUI_0, EUI_1, EUI_2, EUI_3, EUI_4, EUI_5, EUI_6 , 0x22};
-                    PeticionVCCCambioCanal.AddrMode = BROADCAST_ADDRMODE;
-                #else
-                    BYTE DireccionNodoDestino[] = {EUI_0, EUI_1, EUI_2, EUI_3, EUI_4, EUI_5, EUI_6 , 0x11};
-                    PeticionVCCCambioCanal.AddrMode = LONG_MIWI_ADDRMODE;
-                #endif
 
+                PeticionVCCCambioCanal.AddrMode = BROADCAST_ADDRMODE;
                 PeticionVCCCambioCanal.Action = ActSend;
                 PeticionVCCCambioCanal.BufferVCC = MensajeVCC;
-                PeticionVCCCambioCanal.DirNodDest = DireccionNodoDestino;
                 PeticionVCCCambioCanal.Transceiver = Peticion->Transceiver;
                 BYTE sizeBufferVCC = 14;
                 PeticionVCCCambioCanal.Param1 = &sizeBufferVCC;
