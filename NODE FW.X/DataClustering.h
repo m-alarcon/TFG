@@ -46,7 +46,6 @@ double CalculoDistancia(coord pto1, coord pto2);
 BYTE* hayAtacante();
 void Envio_Datos_Atacantes(at data);
 void Recibir_info(void);
-void Enviar_Paquete_Datos(BYTE addrmode, BYTE *addr);
 
 #endif	/* DATACLUSTERING_H */
 

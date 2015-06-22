@@ -46,6 +46,17 @@ int paquetesRecibidos = 0;
 
 BYTE n_rtx;
 
+WORD mseg = 0;
+WORD Periodo = 1000;
+extern radioInterface riActual;
+extern BYTE EnviandoMssgApp;
+extern BYTE RecibiendoMssg;
+    #if defined NODE_1
+        BYTE EUINodoExt[] = {EUI_0, EUI_1, EUI_2, EUI_3, EUI_4, EUI_5, EUI_6, 0x22};
+    #elif defined NODE_2
+        BYTE EUINodoExt[] = {EUI_0, EUI_1, EUI_2, EUI_3, EUI_4, EUI_5, EUI_6, 0x11};
+    #endif
+
 void DataClustering(void){
     BYTE i;
     if (aprendizaje == 0){
@@ -298,7 +309,7 @@ void InitTimer5(){
  * Si ha terminado el tiempo de aprendizaje se para el timer.
  ******************************************************************************/
 void __ISR(_TIMER_5_VECTOR, ipl1AUTO)IntTmp(void) {
-
+/*
     reinicioAtacantesTime++;
     learningTime++;
     //Printf("Se ha entrado en el ISR del timer 5\r\n");
@@ -321,6 +332,20 @@ void __ISR(_TIMER_5_VECTOR, ipl1AUTO)IntTmp(void) {
         inicializarTablaAtacantes();
         reinicioAtacantesTime = 0;
     }
+ */
+    if(mseg<Periodo)
+    {
+        mseg++;
+    }
+    else if(mseg==Periodo)
+    {
+        if(!EnviandoMssgApp && !RecibiendoMssg)
+        {
+            mseg = 0;
+            Enviar_Paquete_Datos_App(riActual, LONG_MIWI_ADDRMODE, &EUINodoExt);
+        }
+    }
+
     mT5ClearIntFlag();
 }
 

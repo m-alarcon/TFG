@@ -129,6 +129,7 @@ BYTE MIWI868_RSSI_values[MIWI0868NumChannels];
 BYTE MIWI2400_RSSI_values[MIWI2400NumChannels];
 
 BYTE CanalOptimo;
+radioInterface riCanalOptimo;
 
 /*Del Propio nodo*/
     //La direccion larga.

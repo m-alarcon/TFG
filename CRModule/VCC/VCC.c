@@ -157,9 +157,11 @@ BOOL CRM_VCC_MssgCreator(INPUT RECEIVED_MESSAGE *Buffer)
             PeticionGeneral.DireccionEUI = Buffer->SourceAddress;
             Peticion4Repo.Action = Buffer->Payload[SubMDestActField];
             Peticion4Repo.DataType = Buffer->Payload[SubMDestParam1Field];
-            Peticion4Repo.Param1 = &Buffer->Payload[SubMDestParam2Field];
-            for (i = SubMDestParam3Field; i < Buffer->PayloadSize; i++){
-                Buffer4Repo[i-SubMDestParam2Field] = *(Buffer->Payload + i);
+            Peticion4Repo.Transceiver = Buffer->Payload[Buffer->PayloadSize - 1];
+            REPOSUBDATANETNODE Param1SubData = Buffer->Payload[SubMDestParam2Field];
+            Peticion4Repo.Param1 = &Param1SubData;
+            for (i = SubMDestParam3Field; i < Buffer->PayloadSize - 1; i++){
+                Buffer4Repo[i-SubMDestParam3Field] = *(Buffer->Payload + i);
             }
             Peticion4Repo.Param2 = &Buffer4Repo;
             Peticion4Repo.EUINodo = Buffer->SourceAddress;

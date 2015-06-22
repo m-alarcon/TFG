@@ -1345,13 +1345,9 @@ CRMODULE_TEST:
         //continue;
         Rutina_Principal();
 
-DC_TEST:
-
-        Enviar_Paquete_Datos_App(riActual, LONG_MIWI_ADDRMODE, &EUINodoExt);
+DC_TEST:       
         Recibir_info();
-
-        SWDelay(1000);
-
+        SWDelay(50);
     }
     return 0;
 }

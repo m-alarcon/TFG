@@ -13,9 +13,11 @@ extern RECEIVED_MESSAGE BufferRecepcionPrueba;
 RECEIVED_MESSAGE AppRXBuffer;
 BYTE AppDireccion[MY_ADDRESS_LENGTH];
 BYTE BufferRx[RX_BUFFER_SIZE];
+extern radioInterface riActual;
 
 void Enviar_Paquete_Datos_App(radioInterface ri, BYTE modo, BYTE *addr){
 
+    if(!CHNG_MSSG_RCVD){
     BYTE n_rtx,c;
     n_rtx = 0;
     i = 0;
@@ -54,7 +56,6 @@ void Enviar_Paquete_Datos_App(radioInterface ri, BYTE modo, BYTE *addr){
                 DiscardTXData(ri);
                 break;
             }
-            SWDelay(200);
         }
         else{
             Printf(" => OK");
@@ -70,18 +71,18 @@ void Enviar_Paquete_Datos_App(radioInterface ri, BYTE modo, BYTE *addr){
         }
     }
     EnviandoMssgApp = FALSE;
+    }
 }
 
 void limpiaBufferRX(void){
 
-    radioInterface ri = MIWI_2400;
-    BYTE recibido = GetPayloadToRead(ri);
+    BYTE recibido = GetPayloadToRead(riActual);
     BYTE i;
     BYTE info;
     BYTE *data = &info;
     if (recibido != 0){
         for (i = 0; i < recibido; i++){
-            GetRXData(ri, data);
+            GetRXData(riActual, data);
         }
     }
 }
@@ -121,8 +122,9 @@ void Recibir_info(void){
     CtrlMssgFlag = FALSE;
     HayDatosApp = FALSE;
     EnviandoMssgApp = FALSE;
-    RecibiendoMssg = TRUE;
-
+    if(MSSG_PROC_OPTM == 1){
+        RecibiendoMssg = TRUE;
+    }
         if(Rcvd_Buffer1(&AppRXBuffer))
         {
             RecibiendoMssg = FALSE;
@@ -143,7 +145,7 @@ void Recibir_info(void){
                         /*La direccion del nodo origen.*/
                         for(i = 0; i < MY_ADDRESS_LENGTH; i++)
                         {
-                            *(BufferRecepcionPrueba.SourceAddress + i) = *(AppRXBuffer.SourceAddress + i);//Esto genera una excepcion.ASI????
+                            *(BufferRecepcionPrueba.SourceAddress + i) = *(AppRXBuffer.SourceAddress + i);
                         }
                         /*El tamaño del payload del paquete recibido*/
                         BufferRecepcionPrueba.PayloadSize = AppRXBuffer.PayloadSize;
@@ -154,15 +156,16 @@ void Recibir_info(void){
 
                         for(i=0; i < AppRXBuffer.PayloadSize; i++)
                         {
-                            BufferRecepcionPrueba.Payload[i] = AppRXBuffer.Payload[i];//Quizas tmb falle aqui.
+                            BufferRecepcionPrueba.Payload[i] = AppRXBuffer.Payload[i];
                         }
                         CtrlMssgFlag = TRUE;
                     }
                     break;
                 default:
                     //TODO es un mensaje normal.
-                    Printf("\r\nMensaje de aplicacion recibido");
+                    
                     if (MSSG_PROC_OPTM == 1){//Como ya se ha procesado en optimizer se descarta el paquete.
+                        Printf("\r\nMensaje de aplicacion recibido");
                         limpiaBufferRX();
                         MSSG_PROC_OPTM = 0;
                     } else { //No se hace nada porque tenemos que esperar a que el optimizer lo procese

@@ -60,7 +60,7 @@ typedef enum _VCCMSSGTYPE
 //El tipo de mensaje que ha recibido/envia. Si es de control con cabecera 0x01 /////MODIFICADO malarcon
 typedef enum _VCCMSSGPARSING
 {
-    CtrlMssgField = 0x00, SubMDestField = 0x01, SubMDestActField, SubMDestParam1Field, SubMDestParam2Field, SubMDestParam3Field, SubMDestParam4Field, SubMDestParamTransceiver
+    CtrlMssgField = 0x00, SubMDestField = 0x01, SubMDestActField = 0x02, SubMDestParam1Field = 0x03, SubMDestParam2Field = 0x04, SubMDestParam3Field = 0x05, SubMDestParam4Field, SubMDestParamTransceiver
 } VCCMSSPARSING;
 
 

@@ -103,7 +103,7 @@ typedef struct _OPTM_MSSG_RCVD
 #define MAX_VECTOR_POTENCIA     5
 #define UMBRAL_POTENCIA         20
 
-BYTE MSSG_PROC_OPTM;
+BYTE MSSG_PROC_OPTM, CHNG_MSSG_RCVD;
 
 /*****************************************************************************/
 /****************FIN DEFINICION DE CONSTANTES Y VARIABLES*********************/

@@ -305,6 +305,20 @@ BOOL CRM_Repo_NodosRed(REPO_MSSG_RCVD *Peticion)
                     case RSSINetNode:
                         //Le he pasado en Param2 el vector con todos los RSSI.
                         //Formato: RSSIResultado434, CanalOptimo434, RSSIResultado868, CanalOptimo868, RSSIResultado2400, CanalOptimo2400, CanalOptimo, ri
+                        MIWI434_RSSI_values[*(BYTE*)(Peticion->Param2 + 1)] = *(BYTE*)(Peticion->Param2);
+                        MIWI868_RSSI_values[*(BYTE*)(Peticion->Param2 + 3)] = *(BYTE*)(Peticion->Param2 + 2);
+                        MIWI2400_RSSI_values[*(BYTE*)(Peticion->Param2 + 5)] = *(BYTE*)(Peticion->Param2 + 4);
+                        CanalOptimo = *(BYTE*)(Peticion->Param2 + 6);
+                        riCanalOptimo = *(BYTE*)(Peticion->Param2 + 7);
+                        //Manda un mensaje a Optm diciendole que ha llegado un mensaje de cambio de canal.
+                        OPTM_MSSG_RCVD PeticionProcMensCambio;
+                        BYTE ProcReq = ProcCambioCanal;
+                        PeticionProcMensCambio.Action = ActProcRq;
+                        PeticionProcMensCambio.Param1 = &ProcReq;
+                        PeticionProcMensCambio.Param2 = Peticion->Param2;
+                        PeticionProcMensCambio.Transceiver = Peticion->Transceiver;
+                        CRM_Message(NMM, SubM_Opt, &PeticionProcMensCambio);
+                        
                         break;
                     case CambiosAceptados:
 
