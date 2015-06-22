@@ -320,9 +320,6 @@ BOOL CRM_Repo_NodosRed(REPO_MSSG_RCVD *Peticion)
                         CRM_Message(NMM, SubM_Opt, &PeticionProcMensCambio);
                         
                         break;
-                    case CambiosAceptados:
-
-                        break;
                     case AllNetNode:
                         break;
                     default:

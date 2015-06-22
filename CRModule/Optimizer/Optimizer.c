@@ -353,54 +353,27 @@ NOACEPTA: //Si no queremos notifcar el no cambio comentariamos y dejaríamos solo
                 BOOL cambio = CRM_Optm_Calcular_Costes(0);//*(BYTE*)(PeticionRepoRTx.Param2));
                 if(cambio == TRUE){
                     //Notifico a los otros nodos que quiero cambiar de canal y hago 4)
-                    #if defined NODE_1
-                        //Informa al resto de nodos que se quiere cambiar de canal.
-                        nRespuestas = 1;
-                        MSN_MSSG_RCVD PeticionCambioCanal;
-                        VCC_MSSG_RCVD PeticionVCCCambioCanal;
-                        BYTE MensajeVCC[] = {VccCtrlMssg, SubM_Repo, ActStr, NetNode, RSSINetNode, *(BYTE*)(Peticion->Param2), *(BYTE*)(Peticion->Param2 + 1), *(BYTE*)(Peticion->Param2 + 2), *(BYTE*)(Peticion->Param2 + 3), *(BYTE*)(Peticion->Param2 + 4), *(BYTE*)(Peticion->Param2 + 5), *(BYTE*)(Peticion->Param2 + 6), *(BYTE*)(Peticion->Param2 + 7), riActual};
-                        PeticionVCCCambioCanal.AddrMode = BROADCAST_ADDRMODE;
-                        PeticionVCCCambioCanal.Action = ActSend;
-                        PeticionVCCCambioCanal.BufferVCC = &MensajeVCC;
-                        PeticionVCCCambioCanal.Transceiver = Peticion->Transceiver;
-                        BYTE sizeBufferVCC = 13;
-                        PeticionVCCCambioCanal.Param1 = &sizeBufferVCC;
+                    //Informa al resto de nodos que se quiere cambiar de canal.
+                    MSN_MSSG_RCVD PeticionCambioCanal;
+                    VCC_MSSG_RCVD PeticionVCCCambioCanal;
+                    BYTE MensajeVCC[] = {VccCtrlMssg, SubM_Repo, ActStr, NetNode, RSSINetNode, *(BYTE*)(Peticion->Param2), *(BYTE*)(Peticion->Param2 + 1), *(BYTE*)(Peticion->Param2 + 2), *(BYTE*)(Peticion->Param2 + 3), *(BYTE*)(Peticion->Param2 + 4), *(BYTE*)(Peticion->Param2 + 5), *(BYTE*)(Peticion->Param2 + 6), *(BYTE*)(Peticion->Param2 + 7), riActual};
+                    PeticionVCCCambioCanal.AddrMode = BROADCAST_ADDRMODE;
+                    PeticionVCCCambioCanal.Action = ActSend;
+                    PeticionVCCCambioCanal.BufferVCC = &MensajeVCC;
+                    PeticionVCCCambioCanal.Transceiver = Peticion->Transceiver;
+                    BYTE sizeBufferVCC = 13;
+                    PeticionVCCCambioCanal.Param1 = &sizeBufferVCC;
 
-                        PeticionCambioCanal.Peticion_Destino.PeticionVCC = &PeticionVCCCambioCanal;
+                    PeticionCambioCanal.Peticion_Destino.PeticionVCC = &PeticionVCCCambioCanal;
 
-                        CRM_Message(VCC, SubM_Ext, &PeticionCambioCanal);
+                    CRM_Message(VCC, SubM_Ext, &PeticionCambioCanal);
 
-                        //Mando mensaje a optimizer para ejecutar GT
-                        OPTM_MSSG_RCVD PeticionCambio;
-                        PeticionCambio.Action = SubActRespCambio;
-                        PeticionCambio.Transceiver = Peticion->Transceiver;
-                        PeticionCambio.Param1 = Peticion->Param1;
-                        CRM_Optm_Cons(&PeticionCambio);
-
-                    #else
-                        //Responde al AP
-                        MSN_MSSG_RCVD RespuestaCambioCanal;
-                        VCC_MSSG_RCVD RespuestaVCCCambioCanal;
-                        BYTE MensajeVCC[] = {VccCtrlMssg, SubM_Opt, ActProcRq, ProcRespCambio, FALSE, riActual};
-                        RespuestaVCCCambioCanal.AddrMode = LONG_MIWI_ADDRMODE;
-                        RespuestaVCCCambioCanal.Action = ActSend;
-                        RespuestaVCCCambioCanal.BufferVCC = &MensajeVCC;
-                        RespuestaVCCCambioCanal.DirNodDest = Peticion->EUINodo;
-                        RespuestaVCCCambioCanal.Transceiver = Peticion->Transceiver;
-                        BYTE sizeBufferVCC = 6;
-                        RespuestaVCCCambioCanal.Param1 = &sizeBufferVCC;
-
-                        RespuestaCambioCanal.Peticion_Destino.PeticionVCC = &RespuestaVCCCambioCanal;
-
-                        CRM_Message(VCC, SubM_Ext, &RespuestaCambioCanal);
-
-                        //Mando mensaje a optimizer para ejecutar GT
-                        OPTM_MSSG_RCVD PeticionCambio;
-                        PeticionCambio.Action = SubActRespCambio;
-                        PeticionCambio.Transceiver = Peticion->Transceiver;
-                        PeticionCambio.Param1 = Peticion->Param1;
-                        CRM_Optm_Cons(&PeticionCambio);
-                    #endif
+                    //Mando mensaje a optimizer para ejecutar GT
+                    OPTM_MSSG_RCVD PeticionCambio;
+                    PeticionCambio.Action = SubActRespCambio;
+                    PeticionCambio.Transceiver = Peticion->Transceiver;
+                    PeticionCambio.Param1 = Peticion->Param1;
+                    CRM_Optm_Cons(&PeticionCambio);
 
                     EstadoGT = EsperandoDecisionRestoNodos;
 
@@ -410,11 +383,12 @@ NOACEPTA: //Si no queremos notifcar el no cambio comentariamos y dejaríamos solo
                     VCC_MSSG_RCVD PeticionVCCCambioCanal;
                     BYTE MensajeVCC[] = {VccCtrlMssg, SubM_Opt, ActProcRq, ProcRespCambio, FALSE, riActual};
 
+                    BYTE Direccion[] = {EUI_0, EUI_1, EUI_2, EUI_3, EUI_4, EUI_5, EUI_6, 0x11};
                     PeticionVCCCambioCanal.Action = ActSend;
                     PeticionVCCCambioCanal.BufferVCC = MensajeVCC;
-                    PeticionVCCCambioCanal.DirNodDest = Peticion->EUINodo;
+                    PeticionVCCCambioCanal.DirNodDest = Direccion;//Peticion->EUINodo;
                     PeticionVCCCambioCanal.Transceiver = Peticion->Transceiver;
-                    BYTE sizeBufferVCC = 5;
+                    BYTE sizeBufferVCC = 6;
                     PeticionVCCCambioCanal.Param1 = &sizeBufferVCC;
 
                     PeticionCambioCanal.Peticion_Destino.PeticionVCC = &PeticionVCCCambioCanal;
@@ -422,6 +396,7 @@ NOACEPTA: //Si no queremos notifcar el no cambio comentariamos y dejaríamos solo
                     CRM_Message(VCC, SubM_Ext, &PeticionCambioCanal);
 
                     EstadoGT = Clear;
+                    SWDelay(10000);
                     CHNG_MSSG_RCVD = 0;
                 }
             }
@@ -435,8 +410,6 @@ NOACEPTA: //Si no queremos notifcar el no cambio comentariamos y dejaríamos solo
                 //Contar todas las respuestas que recibe hasta que sean igual que el número de nodos conectados.
                 //Cuando se han recibido todas las respuestas manda un mensaje a todos comunicando la decisión final.
                 if(*((BYTE*)(Peticion->Param2)) == TRUE){
-                    nRespuestas++;
-                    if (nRespuestas == CONNECTION_SIZE){
                         Printf("\r\nTodos los nodos han aceptado cambiar de canal.");
                         //Mandar mensaje al resto de nodos confirmando que se va a cambiar de canal
                         MSN_MSSG_RCVD RespuestaCambioCanal;
@@ -453,7 +426,6 @@ NOACEPTA: //Si no queremos notifcar el no cambio comentariamos y dejaríamos solo
 
                         CRM_Message(VCC, SubM_Ext, &RespuestaCambioCanal);
 
-                        nRespuestas = 0;
                         EstadoGT = EsperandoDecisionFinal;                        
                     }
                 } else {
@@ -953,7 +925,8 @@ BOOL CRM_Optm_Cons(OPTM_MSSG_RCVD *Peticion){
                 PeticionVCCCambioCanal.Param1 = &sizeBufferVCC;
 
                 PeticionCambioCanal.Peticion_Destino.PeticionVCC = &PeticionVCCCambioCanal;
-
+                limpiaBufferRX();
+                DumpRXPckt(riActual);
                 Printf("\r\nSe manda peticion de cambio de canal al otro nodo.");
                 CRM_Message(VCC, SubM_Ext, &PeticionCambioCanal);
 
@@ -1044,6 +1017,7 @@ BOOL CRM_Optm_Cons(OPTM_MSSG_RCVD *Peticion){
             break;
             }
     }
+    return FALSE;
 }
 
 /*La rutina propia de ejecución en forma de una interrupción para que ocurra

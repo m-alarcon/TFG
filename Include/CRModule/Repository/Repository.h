@@ -59,7 +59,7 @@ typedef enum _REPOSUBDATAOWNNODE
 //Sub-NetNode
 typedef enum _REPOSUBDATANETNODE
 {
-    AdditionalNetNode = 0x01, AllNetNode = 0x10, RSSINetNode, CambiosAceptados
+    AdditionalNetNode = 0x01, AllNetNode = 0x10, RSSINetNode
 } REPOSUBDATANETNODE;
 
 //Sub-NetNode
@@ -130,6 +130,7 @@ BYTE MIWI2400_RSSI_values[MIWI2400NumChannels];
 
 BYTE CanalOptimo;
 radioInterface riCanalOptimo;
+LONG NumMssgIntercambiados;
 
 /*Del Propio nodo*/
     //La direccion larga.
