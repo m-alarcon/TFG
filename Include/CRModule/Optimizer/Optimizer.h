@@ -105,6 +105,7 @@ typedef struct _OPTM_MSSG_RCVD
 
 BYTE MSSG_PROC_OPTM, CHNG_MSSG_RCVD;
 OPTGTSTATE EstadoGT;
+BYTE primera;
 
 /*****************************************************************************/
 /****************FIN DEFINICION DE CONSTANTES Y VARIABLES*********************/

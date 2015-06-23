@@ -92,7 +92,7 @@ extern BYTE canalCambio;
     BYTE n_msg = 2; /*Numero de mensajes necesarios para cambiar de canal. Cambiar con el número que sea realmente*/
     WORD CosteCambio, CosteOcupado, CosteNoCambio;
     BYTE nRespuestas;
-    BYTE nRespuestasAfirmativas;
+    BYTE nRespuestasAfirmativas;    
 
 /*****************************************************************************/
 /******************************FIN DE VARIABLES*******************************/
@@ -340,6 +340,10 @@ NOACEPTA: //Si no queremos notifcar el no cambio comentariamos y dejaríamos solo
         case ProcCambioCanal:
         {
             CHNG_MSSG_RCVD = 1;
+            if(!primera){
+                limpiaBufferRX();
+                primera = 1;
+            }
             if(EstadoGT == Clear){
                 Printf("\r\nSe ha recibido peticion de cambio de canal del otro nodo.");
                 REPO_MSSG_RCVD PeticionRepoRTx;
@@ -747,6 +751,7 @@ BOOL CRM_Optm_Init(void)
         CtrlMssgFlag = FALSE;
         nRespuestas = 0;
         nRespuestasAfirmativas = 0;
+        primera = 0;
        // NumMsj = numMsjXDefecto; //Este es mi "espacio muestral" de los mensajes
             //que tengo en cuenta para realizar los calculos.
         MaxRTx = maxRTxXDefecto;
@@ -1306,7 +1311,8 @@ BOOL CRM_Optm_Int(void)
             CRM_Message(NMM, SubM_Repo, &PeticionRepoPotencias);
 
             BOOL inicioCambio = CRM_Optm_Inicio_GT(PeticionRepoPotencias.Param1);
-            if (inicioCambio){                
+            if (inicioCambio){
+                limpiaBufferRX();                
                 OPTM_MSSG_RCVD PeticionInicioCambio;
                 PeticionInicioCambio.Action = SubActCambio;
                 PeticionInicioCambio.Transceiver = riActual;
