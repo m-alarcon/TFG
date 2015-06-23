@@ -46,7 +46,7 @@ typedef enum _REPACTION
 
 typedef enum _REPODATATYPE
 {
-    OwnNode = 0x01, NetNode, EnvNode, Enviro, EnvPotencias, IncluirPotencia, AddMsg, EnvRTx, EnvNMsg, AllInfo = 0x10
+    OwnNode = 0x01, NetNode, EnvNode, Enviro, EnvPotencias, IncluirPotencia, AddMsg, EnvRTx, EnvNMsg, EnvRSSI, SaveRSSI, AllInfo = 0x10
 } REPODATATYPE;
 
 /*Los sub-tipos de datos para cada tipo de dato*/
@@ -128,9 +128,19 @@ BYTE MIWI434_RSSI_values[MIWI0434NumChannels];
 BYTE MIWI868_RSSI_values[MIWI0868NumChannels];
 BYTE MIWI2400_RSSI_values[MIWI2400NumChannels];
 
+BYTE MIWI434_RSSI_optimo_ext[CONNECTION_SIZE];
+BYTE MIWI434_canal_optimo_ext[CONNECTION_SIZE];
+BYTE MIWI868_RSSI_optimo_ext[CONNECTION_SIZE];
+BYTE MIWI868_canal_optimo_ext[CONNECTION_SIZE];
+BYTE MIWI2400_RSSI_optimo_ext[CONNECTION_SIZE];
+BYTE MIWI2400_canal_optimo_ext[CONNECTION_SIZE];
+
 BYTE CanalOptimo;
 radioInterface riCanalOptimo;
-LONG NumMssgIntercambiados[CONNECTION_SIZE];
+
+BYTE CanalOptimoExt[CONNECTION_SIZE];
+radioInterface riCanalOptimoExt[CONNECTION_SIZE];
+UINT16 NumMssgIntercambiados[CONNECTION_SIZE];
 
 /*Del Propio nodo*/
     //La direccion larga.
@@ -216,6 +226,8 @@ void CRM_Repo_NodosEnv(void);
 void CRM_Repo_Env(BYTE canal, BYTE InfoRSSI);
 void CRM_Repo_NRTx(BYTE n_rtx, BYTE canal, radioInterface ri);
 void CRM_Repo_Mensajes_Intercambiados(BYTE *Address);
+void CRM_Repo_Get_RSSI(radioInterface ri, BYTE position, OUTPUT BYTE *RSSI, OUTPUT BYTE *channel);
+void CRM_Repo_Str_RSSI(radioInterface ri);
 /*Fin de funciones de I/O de datos*/
 
 /*Funciones de inicializacion*/

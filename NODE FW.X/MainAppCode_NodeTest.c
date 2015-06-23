@@ -39,6 +39,7 @@ BYTE ri_RI_MASK1 = MIWI_0434_RI_MASK;
 #endif
 
 radioInterface riActual = MIWI_0434;
+BYTE canalCambio = 0;
 
 void InitAppVariables() {
     //Si las hubiera...

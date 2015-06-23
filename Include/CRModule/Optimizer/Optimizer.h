@@ -76,7 +76,7 @@ typedef enum _OPTSTATMACH
 
 typedef enum _OPTGTSTATE
 {
-    Clear = 0x00, EsperandoDecisionRestoNodos = 0x01, EsperandoCanalCambio = 0x02, ComunicarDecFinal
+    Clear = 0x00, EsperandoDecisionRestoNodos = 0x01, EsperandoDecFinal = 0x02, ComunicarDecFinal
 } OPTGTSTATE;
 
 /*La estructura de los parametros del Mensaje con destino este modulo.*/
@@ -104,6 +104,7 @@ typedef struct _OPTM_MSSG_RCVD
 #define UMBRAL_POTENCIA         20
 
 BYTE MSSG_PROC_OPTM, CHNG_MSSG_RCVD;
+OPTGTSTATE EstadoGT;
 
 /*****************************************************************************/
 /****************FIN DEFINICION DE CONSTANTES Y VARIABLES*********************/

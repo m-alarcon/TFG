@@ -34,6 +34,7 @@
 
 //Para el optimizer saber cuantas peticiones llevamos en total.
 BYTE NumeroDePeticionesDeCambio;
+extern radioInterface riActual;
 
 /*****************************************************************************/
 /******************************FIN DE VARIABLES*******************************/
@@ -84,6 +85,9 @@ BOOL CRM_Repo_Store(REPO_MSSG_RCVD *Peticion)
             break;
         case(AddMsg):
             CRM_Repo_Mensajes_Intercambiados((*Peticion).Param1);
+            break;
+        case (SaveRSSI):
+            CRM_Repo_Str_RSSI(*(radioInterface*)(Peticion->Param1));
             break;
         default:
             break;
@@ -146,10 +150,12 @@ BOOL CRM_Repo_SendDat(REPO_MSSG_RCVD *Peticion)
         case EnvNMsg:
             for(i = 0; i < CONNECTION_SIZE; i++){
                 if(isSameAddress(Peticion->Param1, Repo_Conn_Table[i].Address)){
-                    Peticion->Param2 = &Repo_Conn_Table[i].PeerInfo[0];
+                    Peticion->Param2 = &NumMssgIntercambiados[i];
                 }
             }
             break;
+        case EnvRSSI:
+            CRM_Repo_Get_RSSI(*(radioInterface*)(Peticion->Param1), *(BYTE*)(Peticion->Param2), Peticion->Param3, Peticion->Param4);
         default:
             break;
     }
@@ -313,23 +319,40 @@ BOOL CRM_Repo_NodosRed(REPO_MSSG_RCVD *Peticion)
 #endif
                         break;
                     case RSSINetNode:
+                    {
                         //Le he pasado en Param2 el vector con todos los RSSI.
                         //Formato: RSSIResultado434, CanalOptimo434, RSSIResultado868, CanalOptimo868, RSSIResultado2400, CanalOptimo2400, CanalOptimo, ri
-                        MIWI434_RSSI_values[*(BYTE*)(Peticion->Param2 + 1)] = *(BYTE*)(Peticion->Param2);
-                        MIWI868_RSSI_values[*(BYTE*)(Peticion->Param2 + 3)] = *(BYTE*)(Peticion->Param2 + 2);
-                        MIWI2400_RSSI_values[*(BYTE*)(Peticion->Param2 + 5)] = *(BYTE*)(Peticion->Param2 + 4);
-                        CanalOptimo = *(BYTE*)(Peticion->Param2 + 6);
-                        riCanalOptimo = *(BYTE*)(Peticion->Param2 + 7);
+                        BYTE i, nodoIndex;
+                        for(i = 0; i < CONNECTION_SIZE; i++){
+                            if(isSameAddress(Peticion->EUINodo, &Repo_Conn_Table[i].Address[0])){
+                                nodoIndex = i;
+                            }
+                        }
+                        MIWI434_RSSI_optimo_ext[nodoIndex] = *(BYTE*)(Peticion->Param2);
+                        MIWI434_canal_optimo_ext[nodoIndex] = *(BYTE*)(Peticion->Param2 + 1);
+                        MIWI868_RSSI_optimo_ext[nodoIndex] = *(BYTE*)(Peticion->Param2 + 2);
+                        MIWI868_canal_optimo_ext[nodoIndex] = *(BYTE*)(Peticion->Param2 + 3);
+                        MIWI2400_RSSI_optimo_ext[nodoIndex] = *(BYTE*)(Peticion->Param2 + 4);
+                        MIWI2400_canal_optimo_ext[nodoIndex] = *(BYTE*)(Peticion->Param2 + 5);
+                        CanalOptimoExt[nodoIndex] = *(BYTE*)(Peticion->Param2 + 6);
+                        riCanalOptimoExt[nodoIndex] = *(BYTE*)(Peticion->Param2 + 7);
                         //Manda un mensaje a Optm diciendole que ha llegado un mensaje de cambio de canal.
+                        BYTE InfoCambio[] = {3, *(BYTE*)(Peticion->Param2 + 6), *(BYTE*)(Peticion->Param2 + 7)};
                         OPTM_MSSG_RCVD PeticionProcMensCambio;
-                        BYTE ProcReq = ProcCambioCanal;
+                        BYTE ProcReq;
+                        if(EstadoGT == EsperandoDecFinal){
+                            ProcReq = ProcDecFinal;
+                        } else {
+                            ProcReq = ProcCambioCanal;
+                        }                        
                         PeticionProcMensCambio.Action = ActProcRq;
                         PeticionProcMensCambio.Param1 = &ProcReq;
-                        PeticionProcMensCambio.Param2 = Peticion->Param2;
+                        PeticionProcMensCambio.Param2 = &InfoCambio;
                         PeticionProcMensCambio.Transceiver = Peticion->Transceiver;
                         CRM_Message(NMM, SubM_Opt, &PeticionProcMensCambio);
                         
                         break;
+                    }    
                     case AllNetNode:
                         break;
                     default:
@@ -388,10 +411,72 @@ void CRM_Repo_Mensajes_Intercambiados(BYTE *Address)
     BYTE i;
     for(i = 0; i < CONNECTION_SIZE; i++){
         if(isSameAddress(Address, Repo_Conn_Table[i].Address)){
-            Repo_Conn_Table[i].PeerInfo[0]++;
+            NumMssgIntercambiados[i]++;
             break;
         }
     }
+}
+
+void CRM_Repo_Str_RSSI(radioInterface ri){
+    BYTE i;
+    switch(ri){
+        case MIWI_0434:
+            for(i = 0; i < MIWI0434NumChannels; i++){
+                GetScanResult(ri, i, &MIWI434_RSSI_values[i]);            
+            }
+            break;
+        case MIWI_0868:
+            for(i = 0; i < MIWI0868NumChannels; i++){
+                GetScanResult(ri, i, &MIWI868_RSSI_values[i]);                
+            }
+            break;
+        case MIWI_2400:
+            for(i = 0; i < MIWI2400NumChannels; i++){
+                GetScanResult(ri, i, &MIWI2400_RSSI_values[i]);
+            }
+            break;             
+    }
+}
+
+void CRM_Repo_Get_RSSI(radioInterface ri, BYTE position, OUTPUT BYTE *RSSI, OUTPUT BYTE *channel){
+    BYTE i, j, n, swap, swapCh;
+    BYTE array[MIWI2400NumChannels];
+    BYTE arrayCh[] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15};
+    switch(ri){
+        case MIWI_0434:
+            n = MIWI0434NumChannels;
+            for (i = 0; i < n; i++){
+                array[i] = MIWI434_RSSI_values[i];                 
+            }
+            break;
+        case MIWI_0868:
+            n = MIWI0868NumChannels;
+            for (i = 0; i < n; i++){
+                array[i] = MIWI868_RSSI_values[i];                
+            }
+            break;
+        case MIWI_2400:
+            n = MIWI2400NumChannels;
+            for (i = 0; i < n; i++){            
+                array[i] = MIWI2400_RSSI_values[i];              
+            }
+            break;             
+    }    
+    for (i = 0 ; i < ( n - 1 ); i++){
+        for (j = 0 ; j < n - i - 1; j++){
+            if (array[j] > array[j+1]){
+                swap         = array[j];
+                array[j]     = array[j+1];
+                array[j+1]   = swap;
+                swapCh       = arrayCh[j];
+                arrayCh[j]   = arrayCh[j+1];
+                arrayCh[j+1] = swapCh;                
+            }
+        }
+    }
+
+    RSSI = &array[position];
+    channel = &arrayCh[position];
 }
 
 //PRUEBA TEST5
@@ -429,8 +514,14 @@ BOOL CRM_Repo_Init(void)
 
     /*Inicialización número mensajes intercambiados*/
     for(i = 0; i < CONNECTION_SIZE; i++){
-
+        NumMssgIntercambiados[i] = 0;
     }
+    
+    /*Inicialización de la interfaz de cada uno de los nodos*/
+    for(i = 0; i < CONNECTION_SIZE; i++){
+        Repo_Conn_Table[i].PeerInfo[0] = riActual;
+        Repo_Conn_Table[i].PeerInfo[1] = GetOpChannel(riActual);
+    }    
 
     /*Inicialización tablas de retransmisiones*/
     #ifdef MIWI_0434_RI

@@ -90,7 +90,7 @@ void limpiaBufferRX(void){
 BOOL Rcvd_Buffer1(RECEIVED_MESSAGE *Buffer)
 {
     BYTE i, err;
-    if (!GetPayloadToRead(ri)) {
+    if (!GetPayloadToRead(riActual)) {
         return FALSE;
     }
     err = GetRXSourceAddr(riActual, Buffer->SourceAddress);
