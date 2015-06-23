@@ -487,6 +487,7 @@ NOACEPTA: //Si no queremos notifcar el no cambio comentariamos y dejaríamos solo
                         PeticionExec.Param1 = canalCambio;
                         PeticionExec.Transceiver = ri;
                         
+                        limpiaBufferRX();
                         riActual = ri;
 
                         CRM_Message(NMM, SubM_Exec, &PeticionExec);//envio del messg.
@@ -1277,8 +1278,19 @@ BOOL CRM_Optm_Int(void)
 #endif
             //TODO aqui deben ir las llamadas a las funciones que deba ejecutar el
             //optimizer.
-            
-    if(WhichRIHasData() != 0x00 && MSSG_PROC_OPTM == 0){
+    BYTE interface = 0x00;
+    switch(riActual){
+        case MIWI_0434:
+            interface |= MIWI_0434_RI_MASK;
+            break;
+        case MIWI_0868:
+            interface |= MIWI_0868_RI_MASK;
+            break;
+        case MIWI_2400:
+            interface |= MIWI_2400_RI_MASK;
+            break;
+    }
+    if(WhichRIHasData() == interface && MSSG_PROC_OPTM == 0){
         //Cada vez que entramos incluimos la potencia del paquete que hemos recibido y sumamos 1 al número de mensajes intercambiados con ese nodo.
         BYTE Direccion[MY_ADDRESS_LENGTH];
         BYTE err;

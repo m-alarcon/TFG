@@ -40,8 +40,8 @@ void Enviar_Paquete_Datos_App(radioInterface ri, BYTE modo, BYTE *addr){
         if (i != NO_ERROR){
             Printf(" => FALLO");
             i = GetFreeTXBufSpace(ri);
-            Printf("\r\nCapacidad libre del buffer de TX: ");
-            PrintDec(i);
+            //Printf("\r\nCapacidad libre del buffer de TX: ");
+            //PrintDec(i);
             n_rtx++;
             if(n_rtx >= maxRTxXDefecto){
                 Printf("\r\nSe ha alcanzado el numero maximo de retransmisiones, se descarta el paquete.");
@@ -158,6 +158,7 @@ void Recibir_info(void){
                             BufferRecepcionPrueba.Payload[i] = AppRXBuffer.Payload[i];
                         }
                         CtrlMssgFlag = TRUE;
+                        limpiaBufferRX();////////////////////////////////////////////////////////
                     }
                     break;
                 default:
@@ -167,8 +168,6 @@ void Recibir_info(void){
                         Printf("\r\nMensaje de aplicacion recibido");
                         limpiaBufferRX();
                         MSSG_PROC_OPTM = 0;
-                    } else { //No se hace nada porque tenemos que esperar a que el optimizer lo procese
-
                     }
                     break;
             }
