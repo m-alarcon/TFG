@@ -92,7 +92,7 @@ extern BYTE canalCambio;
     BYTE n_msg = 2; /*Numero de mensajes necesarios para cambiar de canal. Cambiar con el número que sea realmente*/
     WORD CosteCambio, CosteOcupado, CosteNoCambio;
     BYTE nRespuestas;
-    BYTE nRespuestasAfirmativas;    
+    BYTE nRespuestasAfirmativas;   
 
 /*****************************************************************************/
 /******************************FIN DE VARIABLES*******************************/
@@ -340,10 +340,10 @@ NOACEPTA: //Si no queremos notifcar el no cambio comentariamos y dejaríamos solo
         case ProcCambioCanal:
         {
             CHNG_MSSG_RCVD = 1;
-            if(!primera){
+            /*if(!primera){
                 limpiaBufferRX();
                 primera = 1;
-            }
+            }*/
             if(EstadoGT == Clear){
                 Printf("\r\nSe ha recibido peticion de cambio de canal del otro nodo.");
                 REPO_MSSG_RCVD PeticionRepoRTx;
@@ -366,7 +366,7 @@ NOACEPTA: //Si no queremos notifcar el no cambio comentariamos y dejaríamos solo
                     //Informa al resto de nodos que se quiere cambiar de canal.
                     MSN_MSSG_RCVD PeticionCambioCanal;
                     VCC_MSSG_RCVD PeticionVCCCambioCanal;
-                    BYTE MensajeVCC[] = {VccCtrlMssg, SubM_Opt, ActProcRq, ProcCambioCanal, TRUE, riActual};
+                    BYTE MensajeVCC[] = {VccCtrlMssg, SubM_Opt, ActProcRq, ProcCambioCanal, TRUE, Peticion->Transceiver};
                     PeticionVCCCambioCanal.AddrMode = BROADCAST_ADDRMODE;
                     PeticionVCCCambioCanal.Action = ActSend;
                     PeticionVCCCambioCanal.BufferVCC = &MensajeVCC;
@@ -391,11 +391,11 @@ NOACEPTA: //Si no queremos notifcar el no cambio comentariamos y dejaríamos solo
                     Printf("\r\nNotifico al resto de nodos que no quiero cambiar.");
                     MSN_MSSG_RCVD PeticionCambioCanal;
                     VCC_MSSG_RCVD PeticionVCCCambioCanal;
-                    BYTE MensajeVCC[] = {VccCtrlMssg, SubM_Opt, ActProcRq, ProcCambioCanal, FALSE, riActual};
+                    BYTE MensajeVCC[] = {VccCtrlMssg, SubM_Opt, ActProcRq, ProcCambioCanal, FALSE, Peticion->Transceiver};
 
                     PeticionVCCCambioCanal.Action = ActSend;
                     PeticionVCCCambioCanal.BufferVCC = MensajeVCC;
-                    PeticionVCCCambioCanal.DirNodDest = Peticion->EUINodo;
+                    PeticionVCCCambioCanal.AddrMode = BROADCAST_ADDRMODE;
                     PeticionVCCCambioCanal.Transceiver = Peticion->Transceiver;
                     BYTE sizeBufferVCC = 6;
                     PeticionVCCCambioCanal.Param1 = &sizeBufferVCC;
@@ -420,12 +420,12 @@ NOACEPTA: //Si no queremos notifcar el no cambio comentariamos y dejaríamos solo
                     CRM_Message(NMM, SubM_Repo, &PeticionRepoMssg);
                     
                     UINT32 MensajesTotales = GetProcPckts(Peticion->Transceiver) + GetSentPckts(Peticion->Transceiver);
-                    if((nMensajesIntercambiados/MensajesTotales)*100 >= 10){
+                    if((nMensajesIntercambiados/MensajesTotales)*100 >= 10){//Si el numero de mensajes que me intercambio con este es muy grande no me cambio
                         Printf("\r\nUn nodo con el que me comunico mucho no quiere cambiar.");
                         Printf("\r\nNotifico al resto de nodos que no quiero cambiar.");
                         MSN_MSSG_RCVD PeticionCambioCanal;
                         VCC_MSSG_RCVD PeticionVCCCambioCanal;
-                        BYTE MensajeVCC[] = {VccCtrlMssg, SubM_Opt, ActProcRq, ProcCambioCanal, FALSE, riActual};
+                        BYTE MensajeVCC[] = {VccCtrlMssg, SubM_Opt, ActProcRq, ProcCambioCanal, FALSE, Peticion->Transceiver};
 
                         PeticionVCCCambioCanal.Action = ActSend;
                         PeticionVCCCambioCanal.BufferVCC = MensajeVCC;
@@ -461,11 +461,14 @@ NOACEPTA: //Si no queremos notifcar el no cambio comentariamos y dejaríamos solo
                 if(*((BYTE*)(Peticion->Param2)) == TRUE){
                     Printf("\r\nOtro nodo ha aceptado cambiar al canal propuesto.");
                     if(nRespuestasAfirmativas == nRespuestas){
-                        BYTE MensajeVCC[] = {VccCtrlMssg, SubM_Opt, ActProcRq, ProcRespCambio, TRUE, riActual};
+                        BYTE MensajeVCC[] = {VccCtrlMssg, SubM_Opt, ActProcRq, ProcRespCambio, TRUE, Peticion->Transceiver};
                         
-                        //Mandar esto a repo, que añada la interfaz y el canal en los datos del nodo del que
+                        //Mandar esto a repo, que añada la interfaz en los datos del nodo del que
                         //recibe la info y que mande peticion a opt con esta peticion.
                         /*//////////////////////////////////////////////////////////////////////*/
+                        
+                        //Repo -> ri
+                        
                         MSN_MSSG_RCVD PeticionCambioCanal;
                         VCC_MSSG_RCVD PeticionVCCCambioCanal;
 
@@ -504,10 +507,14 @@ NOACEPTA: //Si no queremos notifcar el no cambio comentariamos y dejaríamos solo
                         Printf(traza);                       
                         
                         //Guardar el canal y la ri en todas las direcciones
-                                                
+                        
+                        //Se devuelven todas las variables usadas al estado inicial
                         EstadoGT = Clear;
-                        SWDelay(1000);
                         CHNG_MSSG_RCVD = 0;
+                        inicioCambio = FALSE;
+                        MSSG_PROC_OPTM = 0;
+                        nRespuestas = 0;
+                        nRespuestasAfirmativas = 0;
                     }
                 }
             }
@@ -515,13 +522,23 @@ NOACEPTA: //Si no queremos notifcar el no cambio comentariamos y dejaríamos solo
         case ProcDecFinal:
             //Aqui va a coger el mensaje que le llega y va a decidir si se cambia al canal que le han mandado o al que habia decidido él.
             if(EstadoGT == EsperandoDecFinal){
+                nRespuestas++;
                 if(*((BYTE*)(Peticion->Param2)) == 3){//Compruebo que es un mensaje con info de cambio de canal.
                     Printf("\r\nOtro nodo ha aceptado cambiar de canal pero a otro."); 
                     
                     BOOL cambio = FALSE;
                     ri = *(BYTE*)(Peticion->Param2 + 2);
                     BYTE CanalOtroNodo = (*(BYTE*)(Peticion->Param2 + 1));
-                    PrintChar(CanalOtroNodo);
+                    
+                    WORD riname;
+                    switch (ri) {
+                        case MIWI_0434: riname = 434; break;
+                        case MIWI_0868: riname = 868; break;
+                        case MIWI_2400: riname = 2400; break;
+                    }
+                    char traza[80];
+                    sprintf(traza, "\r\nQuiere cambiar al canal %d de la interfaz %d.\r\n", CanalOtroNodo, riname);
+                    Printf(traza);
                     
                     //Guardo los RSSI propios de la interfaz que se quiere cambiar
                     REPO_MSSG_RCVD PeticionRepoRSSI;                
@@ -541,30 +558,33 @@ NOACEPTA: //Si no queremos notifcar el no cambio comentariamos y dejaríamos solo
                     PeticionRepoCanales.Param1 = &ri;
                     position = 0;
                     PeticionRepoCanales.Param2 = &position;
-                    PeticionRepoCanales.Param4 = &MejorCanal;
                     CRM_Message(NMM, SubM_Repo, &PeticionRepoCanales);//Peticion mejor canal.
+                    MejorCanal  = *(BYTE*)(PeticionRepoCanales.Param4);
                     position = 1;
                     PeticionRepoCanales.Param2 = &position;
-                    PeticionRepoCanales.Param4 = &SegundoCanal;
                     CRM_Message(NMM, SubM_Repo, &PeticionRepoCanales);//Peticion segundo mejor canal.
+                    SegundoCanal  = *(BYTE*)(PeticionRepoCanales.Param4);
                     position = 2;
-                    PeticionRepoCanales.Param2 = &position;
-                    PeticionRepoCanales.Param4 = &TercerCanal;
-                    CRM_Message(NMM, SubM_Repo, &PeticionRepoCanales);//Peticion tercer mejor canal.                                                          
+                    PeticionRepoCanales.Param2 = &position;        
+                    CRM_Message(NMM, SubM_Repo, &PeticionRepoCanales);//Peticion tercer mejor canal. 
+                    TercerCanal  = *(BYTE*)(PeticionRepoCanales.Param4);
                     position = 3;
-                    PeticionRepoCanales.Param2 = &position;
-                    PeticionRepoCanales.Param4 = &CuartoCanal;
-                    CRM_Message(NMM, SubM_Repo, &PeticionRepoCanales);//Peticion tercer mejor canal.
+                    PeticionRepoCanales.Param2 = &position;            
+                    CRM_Message(NMM, SubM_Repo, &PeticionRepoCanales);//Peticion cuarto mejor canal.
+                    CuartoCanal = *(BYTE*)(PeticionRepoCanales.Param4);
+                    
+                    char trazaCanales[80];
+                    sprintf(trazaCanales, "\r\nLos canales mejores para mi son: el %d, el %d, el %d y el %d.\r\n", MejorCanal, SegundoCanal, TercerCanal, CuartoCanal);
+                    Printf(trazaCanales);
                     
                     if(MejorCanal == CanalOtroNodo || SegundoCanal == CanalOtroNodo || TercerCanal == CanalOtroNodo || CuartoCanal == CanalOtroNodo){
                         cambio = TRUE;
                     }
 
-                    //Aqui comprueba si el canal optimo y la ri concuerdan
                     if (cambio){
                         //Mandar TRUE al resto de nodos
                         canalCambio = CanalOtroNodo;                
-                        BYTE MensajeVCC[] = {VccCtrlMssg, SubM_Opt, ActProcRq, ProcRespCambio, TRUE, riActual};
+                        BYTE MensajeVCC[] = {VccCtrlMssg, SubM_Opt, ActProcRq, ProcRespCambio, TRUE, Peticion->Transceiver};
                         MSN_MSSG_RCVD PeticionCambioCanal;
                         VCC_MSSG_RCVD PeticionVCCCambioCanal;
 
@@ -582,7 +602,79 @@ NOACEPTA: //Si no queremos notifcar el no cambio comentariamos y dejaríamos solo
                         EstadoGT = EsperandoDecFinal;
                     } else {
                         //Cambio de canal, aviso al resto.
-                        Printf("\r\nNo quiero cambiar al canal que me dice.");
+                        Printf("\r\nNo quiero cambiar al canal que me dice. Le digo que no me quiero cambiar y si es el último nodo por contestar me cambio.");
+                        
+                        BYTE MensajeVCC[] = {VccCtrlMssg, SubM_Opt, ActProcRq, ProcDecFinal, FALSE, Peticion->Transceiver};
+                        MSN_MSSG_RCVD PeticionCambioCanal;
+                        VCC_MSSG_RCVD PeticionVCCCambioCanal;
+
+                        PeticionVCCCambioCanal.AddrMode = BROADCAST_ADDRMODE;
+                        PeticionVCCCambioCanal.Action = ActSend;
+                        PeticionVCCCambioCanal.BufferVCC = MensajeVCC;
+                        PeticionVCCCambioCanal.Transceiver = Peticion->Transceiver;
+                        BYTE sizeBufferVCC = 6;
+                        PeticionVCCCambioCanal.Param1 = &sizeBufferVCC;
+
+                        PeticionCambioCanal.Peticion_Destino.PeticionVCC = &PeticionVCCCambioCanal;
+
+                        CRM_Message(VCC, SubM_Ext, &PeticionCambioCanal);
+                        
+                        if(nRespuestas == nRespuestasAfirmativas){
+                            BYTE MensajeVCC[] = {VccCtrlMssg, SubM_Opt, ActProcRq, ProcRespCambio, TRUE, Peticion->Transceiver};
+
+                            //Mandar esto a repo, que añada la interfaz en los datos del nodo del que
+                            //recibe la info y que mande peticion a opt con esta peticion.
+                            /*//////////////////////////////////////////////////////////////////////*/
+
+                            //Repo -> ri
+
+                            MSN_MSSG_RCVD PeticionCambioCanal;
+                            VCC_MSSG_RCVD PeticionVCCCambioCanal;
+
+                            PeticionVCCCambioCanal.AddrMode = BROADCAST_ADDRMODE;
+                            PeticionVCCCambioCanal.Action = ActSend;
+                            PeticionVCCCambioCanal.BufferVCC = MensajeVCC;
+                            PeticionVCCCambioCanal.Transceiver = Peticion->Transceiver;
+                            BYTE sizeBufferVCC = 6;
+                            PeticionVCCCambioCanal.Param1 = &sizeBufferVCC;
+
+                            PeticionCambioCanal.Peticion_Destino.PeticionVCC = &PeticionVCCCambioCanal;
+
+                            CRM_Message(VCC, SubM_Ext, &PeticionCambioCanal);
+                            /*///////////////////////////////////////////////////////////////////////*/
+                            Printf("\r\nTodos los nodos conectados  y que quieren cambiar van a cambiar al canal propuesto, se cambia de canal.");
+                            EXEC_MSSG_RCVD PeticionExec;
+                            PeticionExec.OrgModule = SubM_Opt;
+                            PeticionExec.Action = ActChnHop;
+                            PeticionExec.Param1 = canalCambio;
+                            PeticionExec.Transceiver = ri;
+
+                            limpiaBufferRX();
+                            riActual = ri;
+
+                            CRM_Message(NMM, SubM_Exec, &PeticionExec);//envio del messg.
+                            /*Fin del Message para Executor.*/
+                            WORD riname;
+                            switch (ri) {
+                                case MIWI_0434: riname = 434; break;
+                                case MIWI_0868: riname = 868; break;
+                                case MIWI_2400: riname = 2400; break;
+                            }
+                            char traza[80];
+                            sprintf(traza, "\r\nCambiado al canal %d de la interfaz %d y enviada "
+                                    "la peticion al otro nodo.\r\n", GetOpChannel(ri), riname);
+                            Printf(traza);                       
+
+                            //Guardar el canal y la ri en todas las direcciones
+
+                            //Se devuelven todas las variables usadas al estado inicial
+                            EstadoGT = Clear;
+                            CHNG_MSSG_RCVD = 0;
+                            inicioCambio = FALSE;
+                            MSSG_PROC_OPTM = 0;
+                            nRespuestas = 0;
+                            nRespuestasAfirmativas = 0;                            
+                        }
                     }                    
                 }       
             }
@@ -753,6 +845,8 @@ BOOL CRM_Optm_Init(void)
         nRespuestas = 0;
         nRespuestasAfirmativas = 0;
         primera = 0;
+        flagPrimeraEjecucion = 0;
+        inicioCambio = FALSE;
        // NumMsj = numMsjXDefecto; //Este es mi "espacio muestral" de los mensajes
             //que tengo en cuenta para realizar los calculos.
         MaxRTx = maxRTxXDefecto;
@@ -876,7 +970,7 @@ BOOL CRM_Optm_Task(TASKPARAM Opcion)
 
 BOOL CRM_Optm_Incluir_Potencia(){
     
-    BYTE RSSI,i;
+    BYTE RSSI;
     BYTE *pRSSI = &RSSI;
     if (MSSG_PROC_OPTM == 0){
         if(GetRSSI(riActual,pRSSI) == 0){
@@ -910,7 +1004,7 @@ BOOL CRM_Optm_Inicio_GT(BYTE *pVector){
         s += *(pVector + i);
     }
     media = s/MAX_VECTOR_POTENCIA;
-    if(media < 0xA0){
+    if(media < UMBRAL_POTENCIA){
         inicio = TRUE;
     } else {
         inicio = FALSE;
@@ -925,7 +1019,7 @@ BOOL CRM_Optm_Calcular_Costes(BYTE n_rtx){
     //si cambio o no, no lo tengo en cuenta.
     BOOL cambio;
     CosteCambio = CosteSensing + ((CosteTx + CosteRx) * n_msg);
-    CosteOcupado = CosteTx * 8;//n_rtx;
+    CosteOcupado = CosteTx * n_rtx;
     CosteNoCambio = CosteTx * MaxRTx;
     if (CosteCambio < CosteOcupado){
         cambio = TRUE;
@@ -939,7 +1033,6 @@ BOOL CRM_Optm_Calcular_Costes(BYTE n_rtx){
 BOOL CRM_Optm_Cons(OPTM_MSSG_RCVD *Peticion){
 
     BOOL cambioCanal = FALSE;
-    BYTE i;
     REPO_MSSG_RCVD PeticionRepoRTx;
     BYTE canal = GetOpChannel(Peticion->Transceiver);
 
@@ -1014,11 +1107,12 @@ BOOL CRM_Optm_Cons(OPTM_MSSG_RCVD *Peticion){
                 }
                 
                 canalCambio = CanalOptimo;
+                riActual = ri;
                 
                 //Mandar la información del cambio de canal al resto de nodos.
                 MSN_MSSG_RCVD PeticionCambioCanal;
                 VCC_MSSG_RCVD PeticionVCCCambioCanal;
-                BYTE MensajeVCC[] = {VccCtrlMssg, SubM_Repo, ActStr, NetNode, RSSINetNode, RSSIResultado434, CanalOptimo434, RSSIResultado868, CanalOptimo868, RSSIResultado2400, CanalOptimo2400, CanalOptimo, ri, riActual};
+                BYTE MensajeVCC[] = {VccCtrlMssg, SubM_Repo, ActStr, NetNode, RSSINetNode, RSSIResultado434, CanalOptimo434, RSSIResultado868, CanalOptimo868, RSSIResultado2400, CanalOptimo2400, CanalOptimo, ri, Peticion->Transceiver};
 
                 PeticionVCCCambioCanal.AddrMode = BROADCAST_ADDRMODE;
                 PeticionVCCCambioCanal.Action = ActSend;
@@ -1099,6 +1193,7 @@ BOOL CRM_Optm_Cons(OPTM_MSSG_RCVD *Peticion){
 
             BOOL cambio = FALSE;
             ri = *(BYTE*)(Peticion->Param1 + 2);
+            riActual = ri;
             BYTE CanalOtroNodo = (*(BYTE*)(Peticion->Param1 + 1));
             switch(ri){
                 case MIWI_0434:                    
@@ -1111,6 +1206,16 @@ BOOL CRM_Optm_Cons(OPTM_MSSG_RCVD *Peticion){
                     CanalOptimo = CanalOptimo2400;
                     break;
             }
+            
+            WORD riname;
+            switch (ri) {
+                case MIWI_0434: riname = 434; break;
+                case MIWI_0868: riname = 868; break;
+                case MIWI_2400: riname = 2400; break;
+            }
+            char traza[80];
+            sprintf(traza, "\r\nQuiere cambiar al canal %d de la interfaz %d.\r\n", CanalOtroNodo, riname);
+            Printf(traza);
             
             //Guardo el resto de RSSI propios
             REPO_MSSG_RCVD PeticionRepoRSSI;                
@@ -1130,20 +1235,24 @@ BOOL CRM_Optm_Cons(OPTM_MSSG_RCVD *Peticion){
             PeticionRepoCanales.Param1 = &ri;
             position = 0;
             PeticionRepoCanales.Param2 = &position;
-            PeticionRepoCanales.Param4 = &MejorCanal;
             CRM_Message(NMM, SubM_Repo, &PeticionRepoCanales);//Peticion mejor canal.
+            MejorCanal  = *(BYTE*)(PeticionRepoCanales.Param4);
             position = 1;
             PeticionRepoCanales.Param2 = &position;
-            PeticionRepoCanales.Param4 = &SegundoCanal;
             CRM_Message(NMM, SubM_Repo, &PeticionRepoCanales);//Peticion segundo mejor canal.
+            SegundoCanal  = *(BYTE*)(PeticionRepoCanales.Param4);
             position = 2;
-            PeticionRepoCanales.Param2 = &position;
-            PeticionRepoCanales.Param4 = &TercerCanal;
+            PeticionRepoCanales.Param2 = &position;        
             CRM_Message(NMM, SubM_Repo, &PeticionRepoCanales);//Peticion tercer mejor canal. 
+            TercerCanal  = *(BYTE*)(PeticionRepoCanales.Param4);
             position = 3;
-            PeticionRepoCanales.Param2 = &position;
-            PeticionRepoCanales.Param4 = &CuartoCanal;
-            CRM_Message(NMM, SubM_Repo, &PeticionRepoCanales);//Peticion tercer mejor c
+            PeticionRepoCanales.Param2 = &position;            
+            CRM_Message(NMM, SubM_Repo, &PeticionRepoCanales);//Peticion cuarto mejor canal
+            CuartoCanal = *(BYTE*)(PeticionRepoCanales.Param4);
+            
+            char trazaCanales[80];
+            sprintf(trazaCanales, "\r\nLos canales mejores para mi son: el %d, el %d, el %d y el %d.\r\n", MejorCanal, SegundoCanal, TercerCanal, CuartoCanal);
+            Printf(trazaCanales);            
             
             if(CanalOptimo == CanalOtroNodo || SegundoCanal == CanalOtroNodo || TercerCanal == CanalOtroNodo || CuartoCanal == CanalOtroNodo){
                 cambio = TRUE;
@@ -1154,7 +1263,7 @@ BOOL CRM_Optm_Cons(OPTM_MSSG_RCVD *Peticion){
                 //Mandar TRUE al resto de nodos
                 Printf("\r\nAcepto el canal que me han ofrecido.");
                 canalCambio = CanalOtroNodo;                
-                BYTE MensajeVCC[] = {VccCtrlMssg, SubM_Opt, ActProcRq, ProcRespCambio, TRUE, riActual};
+                BYTE MensajeVCC[] = {VccCtrlMssg, SubM_Opt, ActProcRq, ProcRespCambio, TRUE, Peticion->Transceiver};
                 MSN_MSSG_RCVD PeticionCambioCanal;
                 VCC_MSSG_RCVD PeticionVCCCambioCanal;
 
@@ -1173,7 +1282,7 @@ BOOL CRM_Optm_Cons(OPTM_MSSG_RCVD *Peticion){
             } else {
                 Printf("\r\nNo acepto el canal que me han ofrecido. Mando la información de sensado.");
                 //Mandar la información del cambio de canal al resto de nodos.
-                BYTE MensajeVCC[] = {VccCtrlMssg, SubM_Repo, ActStr, NetNode, RSSINetNode, RSSIResultado434, CanalOptimo434, RSSIResultado868, CanalOptimo868, RSSIResultado2400, CanalOptimo2400, CanalOptimo, ri, riActual};
+                BYTE MensajeVCC[] = {VccCtrlMssg, SubM_Repo, ActStr, NetNode, RSSINetNode, RSSIResultado434, CanalOptimo434, RSSIResultado868, CanalOptimo868, RSSIResultado2400, CanalOptimo2400, CanalOptimo, ri, Peticion->Transceiver};
                 MSN_MSSG_RCVD PeticionCambioCanal;
                 VCC_MSSG_RCVD PeticionVCCCambioCanal;
 
@@ -1278,19 +1387,13 @@ BOOL CRM_Optm_Int(void)
 #endif
             //TODO aqui deben ir las llamadas a las funciones que deba ejecutar el
             //optimizer.
-    BYTE interface = 0x00;
-    switch(riActual){
-        case MIWI_0434:
-            interface |= MIWI_0434_RI_MASK;
-            break;
-        case MIWI_0868:
-            interface |= MIWI_0868_RI_MASK;
-            break;
-        case MIWI_2400:
-            interface |= MIWI_2400_RI_MASK;
-            break;
-    }
-    if(WhichRIHasData() == interface && MSSG_PROC_OPTM == 0){
+            if(flagPrimeraEjecucion == 0){                
+                limpiaBufferRX();
+                flagPrimeraEjecucion = 1;
+                Printf("\r\nSe ha limpiado el buffer de recepcion.");
+                PrintChar(GetPayloadToRead(riActual));
+            }
+    if(GetPayloadToRead(riActual) != 0 && MSSG_PROC_OPTM == 0){
         //Cada vez que entramos incluimos la potencia del paquete que hemos recibido y sumamos 1 al número de mensajes intercambiados con ese nodo.
         BYTE Direccion[MY_ADDRESS_LENGTH];
         BYTE err;
@@ -1314,7 +1417,7 @@ BOOL CRM_Optm_Int(void)
         } else {
             Printf("\r\nSe ha incluido la potencia del ultimo paquete");
         }
-#if defined NODE_1
+
         if (EstadoGT == Clear){
             REPO_MSSG_RCVD PeticionRepoPotencias;
             PeticionRepoPotencias.Action = ActSndDta;
@@ -1322,7 +1425,7 @@ BOOL CRM_Optm_Int(void)
 
             CRM_Message(NMM, SubM_Repo, &PeticionRepoPotencias);
 
-            BOOL inicioCambio = CRM_Optm_Inicio_GT(PeticionRepoPotencias.Param1);
+            inicioCambio = CRM_Optm_Inicio_GT(PeticionRepoPotencias.Param1);
             if (inicioCambio){
                 limpiaBufferRX();                
                 OPTM_MSSG_RCVD PeticionInicioCambio;
@@ -1331,7 +1434,6 @@ BOOL CRM_Optm_Int(void)
                 CRM_Optm_Cons(&PeticionInicioCambio);
             }
         }
-#endif
         
     }
 

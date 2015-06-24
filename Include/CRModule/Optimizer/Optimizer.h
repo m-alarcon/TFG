@@ -101,11 +101,13 @@ typedef struct _OPTM_MSSG_RCVD
 /*****************DEFINICION DE CONSTANTES Y VARIABLES************************/
 /*****************************************************************************/
 #define MAX_VECTOR_POTENCIA     5
-#define UMBRAL_POTENCIA         20
+#define UMBRAL_POTENCIA         14
 
 BYTE MSSG_PROC_OPTM, CHNG_MSSG_RCVD;
 OPTGTSTATE EstadoGT;
 BYTE primera;
+BOOL inicioCambio;
+BYTE flagPrimeraEjecucion;
 
 /*****************************************************************************/
 /****************FIN DEFINICION DE CONSTANTES Y VARIABLES*********************/

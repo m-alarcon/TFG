@@ -440,7 +440,7 @@ void CRM_Repo_Str_RSSI(radioInterface ri){
 
 void CRM_Repo_Get_RSSI(radioInterface ri, BYTE position, OUTPUT BYTE *RSSI, OUTPUT BYTE *channel){
     BYTE i, j, n, swap, swapCh;
-    BYTE array[MIWI2400NumChannels];
+    BYTE array[MIWI2400NumChannels] = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
     BYTE arrayCh[] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15};
     switch(ri){
         case MIWI_0434:

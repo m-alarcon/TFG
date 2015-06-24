@@ -121,9 +121,8 @@ void Recibir_info(void){
     CtrlMssgFlag = FALSE;
     HayDatosApp = FALSE;
     EnviandoMssgApp = FALSE;
-    if(MSSG_PROC_OPTM == 1){
-        RecibiendoMssg = TRUE;
-    }
+    RecibiendoMssg = TRUE;
+        
         if(Rcvd_Buffer1(&AppRXBuffer))
         {
             RecibiendoMssg = FALSE;
@@ -158,13 +157,13 @@ void Recibir_info(void){
                             BufferRecepcionPrueba.Payload[i] = AppRXBuffer.Payload[i];
                         }
                         CtrlMssgFlag = TRUE;
-                        limpiaBufferRX();////////////////////////////////////////////////////////
+                        //limpiaBufferRX();////////////////////////////////////////////////////////
                     }
                     break;
                 default:
                     //TODO es un mensaje normal.
                     
-                    if (MSSG_PROC_OPTM == 1){//Como ya se ha procesado en optimizer se descarta el paquete.
+                    if (MSSG_PROC_OPTM == 1 && CHNG_MSSG_RCVD == 0){//Como ya se ha procesado en optimizer se descarta el paquete.
                         Printf("\r\nMensaje de aplicacion recibido");
                         limpiaBufferRX();
                         MSSG_PROC_OPTM = 0;
