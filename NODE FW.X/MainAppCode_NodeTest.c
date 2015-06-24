@@ -141,7 +141,6 @@ INIT_STAGE:
     BYTE ch434, ch868, ch2400;
 
     BYTE i, j, k, r, data;
-    extern BYTE flagPrimeraEjecucion;
 
     #if defined NODE_1
         BYTE EUINodoExt[] = {EUI_0, EUI_1, EUI_2, EUI_3, EUI_4, EUI_5, EUI_6, 0x22};
@@ -1348,12 +1347,9 @@ CRMODULE_TEST:
         //continue;
         Rutina_Principal();
 
-DC_TEST:     
-        if(flagPrimeraEjecucion){                        
+DC_TEST:          
             Recibir_info();
             SWDelay(200);
-        }
-
     }
     return 0;
 }

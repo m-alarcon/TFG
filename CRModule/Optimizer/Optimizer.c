@@ -92,7 +92,8 @@ extern BYTE canalCambio;
     BYTE n_msg = 2; /*Numero de mensajes necesarios para cambiar de canal. Cambiar con el número que sea realmente*/
     WORD CosteCambio, CosteOcupado, CosteNoCambio;
     BYTE nRespuestas;
-    BYTE nRespuestasAfirmativas;   
+    BYTE nRespuestasAfirmativas;
+    BYTE nRespuestasNegativas; 
 
 /*****************************************************************************/
 /******************************FIN DE VARIABLES*******************************/
@@ -331,7 +332,7 @@ NOACEPTA: //Si no queremos notifcar el no cambio comentariamos y dejaríamos solo
             //TODO actualizar el valor que se utiliza para la estrategia de optimizacion.
 
             //Ya no esperamos respuesta asi que..
-            OptmEstado = Idle;
+            OptmEstado = Idle;            
             MilisDeTimeOut = 0;
 //#endif
             break;            
@@ -369,7 +370,7 @@ NOACEPTA: //Si no queremos notifcar el no cambio comentariamos y dejaríamos solo
                     BYTE MensajeVCC[] = {VccCtrlMssg, SubM_Opt, ActProcRq, ProcCambioCanal, TRUE, Peticion->Transceiver};
                     PeticionVCCCambioCanal.AddrMode = BROADCAST_ADDRMODE;
                     PeticionVCCCambioCanal.Action = ActSend;
-                    PeticionVCCCambioCanal.BufferVCC = &MensajeVCC;
+                    PeticionVCCCambioCanal.BufferVCC = MensajeVCC;
                     PeticionVCCCambioCanal.Transceiver = Peticion->Transceiver;
                     BYTE sizeBufferVCC = 6;
                     PeticionVCCCambioCanal.Param1 = &sizeBufferVCC;
@@ -385,6 +386,9 @@ NOACEPTA: //Si no queremos notifcar el no cambio comentariamos y dejaríamos solo
                     PeticionCambio.Param1 = Peticion->Param2;
                     CRM_Optm_Cons(&PeticionCambio);
 
+                    Printf("\r\nTimeout a 0");
+                    MilisDeTimeOut = 0;
+            
                     EstadoGT = EsperandoDecisionRestoNodos;
 
                 } else {
@@ -404,23 +408,38 @@ NOACEPTA: //Si no queremos notifcar el no cambio comentariamos y dejaríamos solo
 
                     CRM_Message(VCC, SubM_Ext, &PeticionCambioCanal);
 
+                    //Se devuelven todas las variables usadas al estado inicial
                     EstadoGT = Clear;
                     CHNG_MSSG_RCVD = 0;
+                    inicioCambio = FALSE;
+                    MSSG_PROC_OPTM = 0;
+                    nRespuestas = 0;
+                    nRespuestasAfirmativas = 0;
+                    nRespuestasNegativas = 0;
                 }
-            } if (EstadoGT == EsperandoDecisionRestoNodos){
+            } else if (EstadoGT == EsperandoDecisionRestoNodos){
                 nRespuestas++;
-                if(*(BYTE*)(Peticion->Param2) == FALSE){
-                    BYTE nMensajesIntercambiados;
+                BOOL cambio = *((BOOL*)(Peticion->Param2));
+                if(cambio == FALSE){
+                    nRespuestasNegativas++;                    
                     REPO_MSSG_RCVD PeticionRepoMssg;
                     PeticionRepoMssg.Action = ActSndDta;
                     PeticionRepoMssg.DataType = EnvNMsg;
-                    PeticionRepoMssg.Param1 = Peticion->EUINodo;
-                    PeticionRepoMssg.Param2 = &nMensajesIntercambiados;                
+                    PeticionRepoMssg.Param1 = Peticion->EUINodo;                
 
                     CRM_Message(NMM, SubM_Repo, &PeticionRepoMssg);
                     
-                    UINT32 MensajesTotales = GetProcPckts(Peticion->Transceiver) + GetSentPckts(Peticion->Transceiver);
-                    if((nMensajesIntercambiados/MensajesTotales)*100 >= 10){//Si el numero de mensajes que me intercambio con este es muy grande no me cambio
+                    Printf("\r\nEl numero de mensajes intercambiados con ese nodo es: ");
+                    double nMensIntercambiados = *(BYTE*)(PeticionRepoMssg.Param2);
+                    PrintChar(nMensIntercambiados);                    
+                    double MensajesTotales = GetProcPckts(Peticion->Transceiver);
+                    Printf("\r\nEl numero de mensajes totales en esta interfaz es: ");
+                    PrintChar(MensajesTotales);
+                    Printf("\r\nEl porcentaje de mensajes con ese nodo es: ");
+                    double porcentaje = ((nMensIntercambiados/MensajesTotales)*100);
+                    PrintChar(porcentaje); 
+                    
+                    if(porcentaje >= 10){//Si el numero de mensajes que me intercambio con este es muy grande no me cambio
                         Printf("\r\nUn nodo con el que me comunico mucho no quiere cambiar.");
                         Printf("\r\nNotifico al resto de nodos que no quiero cambiar.");
                         MSN_MSSG_RCVD PeticionCambioCanal;
@@ -439,13 +458,35 @@ NOACEPTA: //Si no queremos notifcar el no cambio comentariamos y dejaríamos solo
                         CRM_Message(VCC, SubM_Ext, &PeticionCambioCanal);
 
                         EstadoGT = Clear;
-                        CHNG_MSSG_RCVD = 0;                        
+                        CHNG_MSSG_RCVD = 0;
+                        inicioCambio = FALSE;
+                        MSSG_PROC_OPTM = 0;
+                        nRespuestas = 0;
+                        nRespuestasAfirmativas = 0;
+                        nRespuestasNegativas = 0;
+                    } else {
+                        Printf("\r\nRespuesta negativa de un nodo con el que no me comunico mucho.");
+                        MilisDeTimeOut = 0;
+                        if(nRespuestasNegativas == CONNECTION_SIZE){
+                            Printf("\r\nTodos los nodos han rechazado cambiarse de canal. No hago nada.");
+                            EstadoGT = Clear;
+                            CHNG_MSSG_RCVD = 0;
+                            inicioCambio = FALSE;
+                            MSSG_PROC_OPTM = 0;
+                            nRespuestas = 0;
+                            nRespuestasAfirmativas = 0;  
+                            nRespuestasNegativas = 0;
+                        }
                     }
                 } else {
+                    Printf("\r\nSe ha recibido una respuesta positiva.");
                     nRespuestasAfirmativas++;
+                    MilisDeTimeOut = 0;
                 }
-                if (nRespuestas == CONNECTION_SIZE){
+                if (nRespuestasAfirmativas == CONNECTION_SIZE){
                     Printf("\r\nTodos los nodos con los que me comunico mucho quieren cambiar, pasamos a elegir el canal.");
+                    Printf("\r\nTimeout a 0");
+                    MilisDeTimeOut = 0;
                     EstadoGT = EsperandoDecFinal;
                     nRespuestas = 0;
                 }
@@ -458,7 +499,7 @@ NOACEPTA: //Si no queremos notifcar el no cambio comentariamos y dejaríamos solo
                                                                           //significa que quiere cambiarse al mismo canal.
             if(EstadoGT == EsperandoDecFinal || EstadoGT == EsperandoDecisionRestoNodos){
                 nRespuestas++;
-                if(*((BYTE*)(Peticion->Param2)) == TRUE){
+                if(*((BOOL*)(Peticion->Param2)) == TRUE){
                     Printf("\r\nOtro nodo ha aceptado cambiar al canal propuesto.");
                     if(nRespuestasAfirmativas == nRespuestas){
                         BYTE MensajeVCC[] = {VccCtrlMssg, SubM_Opt, ActProcRq, ProcRespCambio, TRUE, Peticion->Transceiver};
@@ -490,7 +531,6 @@ NOACEPTA: //Si no queremos notifcar el no cambio comentariamos y dejaríamos solo
                         PeticionExec.Param1 = canalCambio;
                         PeticionExec.Transceiver = ri;
                         
-                        limpiaBufferRX();
                         riActual = ri;
 
                         CRM_Message(NMM, SubM_Exec, &PeticionExec);//envio del messg.
@@ -504,9 +544,7 @@ NOACEPTA: //Si no queremos notifcar el no cambio comentariamos y dejaríamos solo
                         char traza[80];
                         sprintf(traza, "\r\nCambiado al canal %d de la interfaz %d y enviada "
                                 "la peticion al otro nodo.\r\n", GetOpChannel(ri), riname);
-                        Printf(traza);                       
-                        
-                        //Guardar el canal y la ri en todas las direcciones
+                        Printf(traza);                                              
                         
                         //Se devuelven todas las variables usadas al estado inicial
                         EstadoGT = Clear;
@@ -515,7 +553,17 @@ NOACEPTA: //Si no queremos notifcar el no cambio comentariamos y dejaríamos solo
                         MSSG_PROC_OPTM = 0;
                         nRespuestas = 0;
                         nRespuestasAfirmativas = 0;
+                        nRespuestasNegativas = 0;
                     }
+                } else {
+                    //Se reinicia todo.
+                    EstadoGT = Clear;
+                    CHNG_MSSG_RCVD = 0;
+                    inicioCambio = FALSE;
+                    MSSG_PROC_OPTM = 0;
+                    nRespuestas = 0;
+                    nRespuestasAfirmativas = 0;
+                    nRespuestasNegativas = 0;                    
                 }
             }
         }
@@ -579,8 +627,8 @@ NOACEPTA: //Si no queremos notifcar el no cambio comentariamos y dejaríamos solo
                     
                     if(MejorCanal == CanalOtroNodo || SegundoCanal == CanalOtroNodo || TercerCanal == CanalOtroNodo || CuartoCanal == CanalOtroNodo){
                         cambio = TRUE;
-                    }
-
+                    }                   
+                    
                     if (cambio){
                         //Mandar TRUE al resto de nodos
                         canalCambio = CanalOtroNodo;                
@@ -599,6 +647,9 @@ NOACEPTA: //Si no queremos notifcar el no cambio comentariamos y dejaríamos solo
 
                         CRM_Message(VCC, SubM_Ext, &PeticionCambioCanal);
 
+                        Printf("\r\nTimeout a 0");
+                        MilisDeTimeOut = 0;
+                        
                         EstadoGT = EsperandoDecFinal;
                     } else {
                         //Cambio de canal, aviso al resto.
@@ -649,7 +700,6 @@ NOACEPTA: //Si no queremos notifcar el no cambio comentariamos y dejaríamos solo
                             PeticionExec.Param1 = canalCambio;
                             PeticionExec.Transceiver = ri;
 
-                            limpiaBufferRX();
                             riActual = ri;
 
                             CRM_Message(NMM, SubM_Exec, &PeticionExec);//envio del messg.
@@ -673,12 +723,13 @@ NOACEPTA: //Si no queremos notifcar el no cambio comentariamos y dejaríamos solo
                             inicioCambio = FALSE;
                             MSSG_PROC_OPTM = 0;
                             nRespuestas = 0;
-                            nRespuestasAfirmativas = 0;                            
+                            nRespuestasAfirmativas = 0;   
+                            nRespuestasNegativas = 0;
                         }
                     }                    
                 }       
             }
-            break;
+            break;            
         default:
             break;
     }
@@ -844,6 +895,7 @@ BOOL CRM_Optm_Init(void)
         CtrlMssgFlag = FALSE;
         nRespuestas = 0;
         nRespuestasAfirmativas = 0;
+        nRespuestasNegativas = 0;
         primera = 0;
         flagPrimeraEjecucion = 0;
         inicioCambio = FALSE;
@@ -1107,7 +1159,6 @@ BOOL CRM_Optm_Cons(OPTM_MSSG_RCVD *Peticion){
                 }
                 
                 canalCambio = CanalOptimo;
-                riActual = ri;
                 
                 //Mandar la información del cambio de canal al resto de nodos.
                 MSN_MSSG_RCVD PeticionCambioCanal;
@@ -1132,6 +1183,9 @@ BOOL CRM_Optm_Cons(OPTM_MSSG_RCVD *Peticion){
                 PeticionRepoRSSI.Param1 = &ri;
 
                 CRM_Message(NMM, SubM_Repo, &PeticionRepoRSSI);
+                
+                Printf("\r\nTimeout a 0");
+                MilisDeTimeOut = 0;
                 
                 EstadoGT = EsperandoDecisionRestoNodos;
 
@@ -1192,8 +1246,7 @@ BOOL CRM_Optm_Cons(OPTM_MSSG_RCVD *Peticion){
             }           
 
             BOOL cambio = FALSE;
-            ri = *(BYTE*)(Peticion->Param1 + 2);
-            riActual = ri;
+            ri = *(BYTE*)(Peticion->Param1 + 2);            
             BYTE CanalOtroNodo = (*(BYTE*)(Peticion->Param1 + 1));
             switch(ri){
                 case MIWI_0434:                    
@@ -1256,8 +1309,7 @@ BOOL CRM_Optm_Cons(OPTM_MSSG_RCVD *Peticion){
             
             if(CanalOptimo == CanalOtroNodo || SegundoCanal == CanalOtroNodo || TercerCanal == CanalOtroNodo || CuartoCanal == CanalOtroNodo){
                 cambio = TRUE;
-            }
-                        
+            }          
             //Aqui comprueba si el canal optimo y la ri concuerdan
             if (cambio){
                 //Mandar TRUE al resto de nodos
@@ -1278,6 +1330,9 @@ BOOL CRM_Optm_Cons(OPTM_MSSG_RCVD *Peticion){
 
                 CRM_Message(VCC, SubM_Ext, &PeticionCambioCanal);
 
+                Printf("\r\nTimeout a 0");
+                MilisDeTimeOut = 0;                
+                
                 EstadoGT = EsperandoDecFinal;
             } else {
                 Printf("\r\nNo acepto el canal que me han ofrecido. Mando la información de sensado.");
@@ -1297,6 +1352,9 @@ BOOL CRM_Optm_Cons(OPTM_MSSG_RCVD *Peticion){
 
                 CRM_Message(VCC, SubM_Ext, &PeticionCambioCanal);
 
+                Printf("\r\nTimeout a 0");
+                MilisDeTimeOut = 0;                
+                
                 EstadoGT = EsperandoDecFinal;
             }
             break;
@@ -1334,6 +1392,28 @@ BOOL CRM_Optm_Int(void)
 #endif
 #endif
 
+    if(EstadoGT != Clear)
+    {
+        if(MilisDeTimeOut < TIEMPODEESPERARESPUESTA){
+            MilisDeTimeOut += 1;
+        }
+        else if(MilisDeTimeOut == TIEMPODEESPERARESPUESTA)
+        {
+            Printf("\r\nSe ha acabado el timeout.");
+            //TODO actualizar que no ha aceptado la peticion y eliminar de la tabla de conexiones.
+            //Se devuelven todas las variables usadas al estado inicial
+            EstadoGT = Clear;
+            CHNG_MSSG_RCVD = 0;
+            inicioCambio = FALSE;
+            MSSG_PROC_OPTM = 0;
+            nRespuestas = 0;
+            nRespuestasAfirmativas = 0;
+            nRespuestasNegativas = 0;
+            MilisDeTimeOut = 0;//Ponemos a 0.
+//            MiApp_RemoveConnection(0); //Eliminamos de la tabla de conexiones.
+        }
+    }
+        
     if(Cuentamseg<Periodomseg)
     {
         Cuentamseg++;
@@ -1426,8 +1506,7 @@ BOOL CRM_Optm_Int(void)
             CRM_Message(NMM, SubM_Repo, &PeticionRepoPotencias);
 
             inicioCambio = CRM_Optm_Inicio_GT(PeticionRepoPotencias.Param1);
-            if (inicioCambio){
-                limpiaBufferRX();                
+            if (inicioCambio){                
                 OPTM_MSSG_RCVD PeticionInicioCambio;
                 PeticionInicioCambio.Action = SubActCambio;
                 PeticionInicioCambio.Transceiver = riActual;

@@ -115,12 +115,10 @@ BOOL Rcvd_Buffer1(RECEIVED_MESSAGE *Buffer)
 void Recibir_info(void){
 
     VCCMSSGTYPE CabeceraRxMssg;
-
+    
     AppRXBuffer.Payload = BufferRx;
-    AppRXBuffer.SourceAddress = AppDireccion;
-    CtrlMssgFlag = FALSE;
-    HayDatosApp = FALSE;
-    EnviandoMssgApp = FALSE;
+    AppRXBuffer.SourceAddress = AppDireccion;    
+    
     RecibiendoMssg = TRUE;
         
         if(Rcvd_Buffer1(&AppRXBuffer))
@@ -157,7 +155,6 @@ void Recibir_info(void){
                             BufferRecepcionPrueba.Payload[i] = AppRXBuffer.Payload[i];
                         }
                         CtrlMssgFlag = TRUE;
-                        //limpiaBufferRX();////////////////////////////////////////////////////////
                     }
                     break;
                 default:
@@ -165,7 +162,6 @@ void Recibir_info(void){
                     
                     if (MSSG_PROC_OPTM == 1 && CHNG_MSSG_RCVD == 0){//Como ya se ha procesado en optimizer se descarta el paquete.
                         Printf("\r\nMensaje de aplicacion recibido");
-                        limpiaBufferRX();
                         MSSG_PROC_OPTM = 0;
                     }
                     break;

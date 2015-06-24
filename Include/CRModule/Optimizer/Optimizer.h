@@ -102,6 +102,7 @@ typedef struct _OPTM_MSSG_RCVD
 /*****************************************************************************/
 #define MAX_VECTOR_POTENCIA     5
 #define UMBRAL_POTENCIA         14
+#define TIEMPODEESPERARESPUESTA 10000
 
 BYTE MSSG_PROC_OPTM, CHNG_MSSG_RCVD;
 OPTGTSTATE EstadoGT;

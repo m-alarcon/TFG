@@ -342,6 +342,9 @@ BOOL CRM_Repo_NodosRed(REPO_MSSG_RCVD *Peticion)
                         BYTE ProcReq;
                         if(EstadoGT == EsperandoDecFinal){
                             ProcReq = ProcDecFinal;
+                        } else if(EstadoGT == EsperandoDecisionRestoNodos){
+                            Printf("\r\nDos nodos han decidido cambiar de canal al mismo tiempo. Se vuelve al principio.");
+                            ProcReq = ProcRespCambio;
                         } else {
                             ProcReq = ProcCambioCanal;
                         }                        

@@ -141,7 +141,7 @@ BOOL CRM_VCC_MssgCreator(INPUT RECEIVED_MESSAGE *Buffer)
             Peticion4Optm.Action = Buffer->Payload[SubMDestActField];
             OPTPROCACTION Param1SubData = Buffer->Payload[SubMDestParam1Field];
             Peticion4Optm.Param1 = &Param1SubData;
-            BYTE Respuesta = Buffer->Payload[SubMDestParam2Field];
+            BOOL Respuesta = Buffer->Payload[SubMDestParam2Field];
             Peticion4Optm.Param2 = &Respuesta;
             Peticion4Optm.Transceiver = Buffer->Payload[SubMDestParam3Field];
             Peticion4Optm.EUINodo = Buffer->SourceAddress;
