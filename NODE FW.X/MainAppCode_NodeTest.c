@@ -39,8 +39,10 @@ BYTE ri_RI_MASK1 = MIWI_0434_RI_MASK;
 #endif
 
 radioInterface riActual = MIWI_0434;
+radioInterface riData;
 BYTE canalCambio = 0;
 BYTE primeraVez = 0;
+BYTE BackupCanal;
 
 void InitAppVariables() {
     //Si las hubiera...
@@ -73,9 +75,6 @@ int mainApp(void) {
 INIT_STAGE:
     InitAppVariables();
     InitNode();
-
-    //Inicialización demo malarcon
-    InitTimer5();
     
 #if defined NODE_NOP
     while (1) { //Bucle infinito. Mantiene las pilas y no hace nada mas.
@@ -141,12 +140,6 @@ INIT_STAGE:
     BYTE ch434, ch868, ch2400;
 
     BYTE i, j, k, r, data;
-
-    #if defined NODE_1
-        BYTE EUINodoExt[] = {EUI_0, EUI_1, EUI_2, EUI_3, EUI_4, EUI_5, EUI_6, 0x22};
-    #elif defined NODE_2
-        BYTE EUINodoExt[] = {EUI_0, EUI_1, EUI_2, EUI_3, EUI_4, EUI_5, EUI_6, 0x11};
-    #endif
 
     while (1) {
 
@@ -1348,8 +1341,8 @@ CRMODULE_TEST:
         Rutina_Principal();
 
 DC_TEST:          
-            Recibir_info();
-            SWDelay(200);
+                                
+                                break;
     }
     return 0;
 }

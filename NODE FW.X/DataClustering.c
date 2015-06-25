@@ -23,11 +23,7 @@
  *****************************************************************************/
 
 #include "DataClustering.h"
-
-double learningTimeMax = 100000;
-double learningTime = 0;
-double reinicioAtacantesTimeMax = 20400000;
-double reinicioAtacantesTime = 0;
+/*
 int t0 = 0;
 BYTE *pRSSI;
 BYTE RSSI = 0;
@@ -42,20 +38,6 @@ BYTE nDetectado = 0;
 
 int nClusters = 0;
 cl cluster;
-int paquetesRecibidos = 0;
-
-BYTE n_rtx;
-
-WORD mseg = 0;
-WORD Periodo = 1000;
-extern radioInterface riActual;
-extern BYTE EnviandoMssgApp;
-extern BYTE RecibiendoMssg;
-    #if defined NODE_1
-        BYTE EUINodoExt[] = {EUI_0, EUI_1, EUI_2, EUI_3, EUI_4, EUI_5, EUI_6, 0x22};
-    #elif defined NODE_2
-        BYTE EUINodoExt[] = {EUI_0, EUI_1, EUI_2, EUI_3, EUI_4, EUI_5, EUI_6, 0x11};
-    #endif
 
 void DataClustering(void){
     BYTE i;
@@ -288,65 +270,6 @@ BYTE* hayAtacante(){
         }
     }
     return NULL;
-}
-
-void InitTimer5(){
-
-    WORD TiempoT5 = 1; //En mseg;
-    WORD Prescaler = 32; //Selecciono el prescaler, si lo
-                                   //cambio revisar opentimer.
-    WORD CuentaT5 = (TiempoT5)*(CLOCK_FREQ/((1<<mOSCGetPBDIV())*Prescaler*1000));
-
-    OpenTimer5(T5_ON | T1_IDLE_CON | T5_GATE_OFF | T5_PS_1_32 | T4_SOURCE_INT, CuentaT5);
-    ConfigIntTimer5(T5_INT_ON | T5_INT_PRIOR_1 | T5_INT_SUB_PRIOR_3);
-}
-
-/*******************************************************************************
- * Function:    IntTmp()
- * Input:       None.
- * Output:      None.
- * Overview:    Timer interruption routine.
- * Si ha terminado el tiempo de aprendizaje se para el timer.
- ******************************************************************************/
-void __ISR(_TIMER_5_VECTOR, ipl1AUTO)IntTmp(void) {
-/*
-    reinicioAtacantesTime++;
-    learningTime++;
-    //Printf("Se ha entrado en el ISR del timer 5\r\n");
-    if (learningTime == learningTimeMax){
-        if (paquetesRecibidos == 0){
-            learningTime = 0;
-        } else {
-            Printf("Se ha acabado el tiempo de aprendizaje\r\n");
-            aprendizaje = 1;
-        }
-    }
-
-    if (reinicioAtacantesTime == 0xEFFFFFFF){
-        reinicioAtacantesTime = 0;
-        Printf("\r\nTimer int");
-    }
-
-    if (learningTime == reinicioAtacantesTimeMax){
-        Printf("Se reinicia la tabla de atacantes\r\n");
-        inicializarTablaAtacantes();
-        reinicioAtacantesTime = 0;
-    }
- */
-    if(mseg<Periodo)
-    {
-        mseg++;
-    }
-    else if(mseg==Periodo)
-    {
-        if(!EnviandoMssgApp && !RecibiendoMssg)
-        {
-            mseg = 0;
-            Enviar_Paquete_Datos_App(riActual, LONG_MIWI_ADDRMODE, &EUINodoExt);
-        }
-    }
-
-    mT5ClearIntFlag();
 }
 
 /*

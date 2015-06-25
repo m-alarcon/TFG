@@ -14,6 +14,7 @@ RECEIVED_MESSAGE AppRXBuffer;
 BYTE AppDireccion[MY_ADDRESS_LENGTH];
 BYTE BufferRx[RX_BUFFER_SIZE];
 extern radioInterface riActual;
+extern radioInterface riData;
 
 void Enviar_Paquete_Datos_App(radioInterface ri, BYTE modo, BYTE *addr){
 
@@ -90,18 +91,37 @@ void limpiaBufferRX(void){
 BOOL Rcvd_Buffer1(RECEIVED_MESSAGE *Buffer)
 {
     BYTE i, err;
-    if (!GetPayloadToRead(riActual)) {
+    if (!GetPayloadToRead(ALL)) {
         return FALSE;
     }
-    err = GetRXSourceAddr(riActual, Buffer->SourceAddress);
+    
+    BYTE RI_MASK = WhichRIHasData();       
+    
+    switch(RI_MASK){
+        case MIWI_0434_RI_MASK:
+            riData = MIWI_0434;
+            Printf("\r\nSe van a descartar los datos en la interfaz de 434");
+            break;
+        case MIWI_0868_RI_MASK:
+            riData = MIWI_0868;
+            Printf("\r\nSe van a descartar los datos en la interfaz de 868");
+            break;
+        case MIWI_2400_RI_MASK:
+            riData = MIWI_2400;
+            Printf("\r\nSe van a descartar los datos en la interfaz de 2400");
+            break;
+    }
+            
+    
+    err = GetRXSourceAddr(riData, Buffer->SourceAddress);
     if (err & 0x80) {
         Printf("\r\nError al obtener la dirección: ");
         PrintChar(err);
         return FALSE;
     }
-    for (i = 0; GetPayloadToRead(riActual) > 0; i++) {
+    for (i = 0; GetPayloadToRead(riData) > 0; i++) {
         BYTE * storeItHere = &(Buffer->Payload[i]);
-        err = GetRXData(riActual, storeItHere);
+        err = GetRXData(riData, storeItHere);
         if (err) {
             Printf("\r\nError al obtener la dirección: ");
             PrintChar(err);
@@ -159,7 +179,7 @@ void Recibir_info(void){
                     break;
                 default:
                     //TODO es un mensaje normal.
-                    
+                    Printf("\r\nEs un mensaje de aplicacion.");
                     if (MSSG_PROC_OPTM == 1 && CHNG_MSSG_RCVD == 0){//Como ya se ha procesado en optimizer se descarta el paquete.
                         Printf("\r\nMensaje de aplicacion recibido");
                         MSSG_PROC_OPTM = 0;

@@ -89,6 +89,9 @@ BOOL CRM_Repo_Store(REPO_MSSG_RCVD *Peticion)
         case (SaveRSSI):
             CRM_Repo_Str_RSSI(*(radioInterface*)(Peticion->Param1));
             break;
+        case (RstRSSI):
+            CRM_Repo_Reiniciar_Potencias();
+            break;
         default:
             break;
     }
@@ -149,7 +152,7 @@ BOOL CRM_Repo_SendDat(REPO_MSSG_RCVD *Peticion)
             break;
         case EnvNMsg:
             for(i = 0; i < CONNECTION_SIZE; i++){
-                if(isSameAddress(Peticion->Param1, Repo_Conn_Table[i].Address)){
+                if(isSameAddress(Peticion->Param1, ConnectionTable[i].Address)){
                     Peticion->Param2 = &NumMssgIntercambiados[i];
                 }
             }
@@ -322,20 +325,14 @@ BOOL CRM_Repo_NodosRed(REPO_MSSG_RCVD *Peticion)
                     {
                         //Le he pasado en Param2 el vector con todos los RSSI.
                         //Formato: RSSIResultado434, CanalOptimo434, RSSIResultado868, CanalOptimo868, RSSIResultado2400, CanalOptimo2400, CanalOptimo, ri
-                        BYTE i, nodoIndex;
-                        for(i = 0; i < CONNECTION_SIZE; i++){
-                            if(isSameAddress(Peticion->EUINodo, &Repo_Conn_Table[i].Address[0])){
-                                nodoIndex = i;
-                            }
-                        }
-                        MIWI434_RSSI_optimo_ext[nodoIndex] = *(BYTE*)(Peticion->Param2);
-                        MIWI434_canal_optimo_ext[nodoIndex] = *(BYTE*)(Peticion->Param2 + 1);
-                        MIWI868_RSSI_optimo_ext[nodoIndex] = *(BYTE*)(Peticion->Param2 + 2);
-                        MIWI868_canal_optimo_ext[nodoIndex] = *(BYTE*)(Peticion->Param2 + 3);
-                        MIWI2400_RSSI_optimo_ext[nodoIndex] = *(BYTE*)(Peticion->Param2 + 4);
-                        MIWI2400_canal_optimo_ext[nodoIndex] = *(BYTE*)(Peticion->Param2 + 5);
-                        CanalOptimoExt[nodoIndex] = *(BYTE*)(Peticion->Param2 + 6);
-                        riCanalOptimoExt[nodoIndex] = *(BYTE*)(Peticion->Param2 + 7);
+                        MIWI434_RSSI_optimo_ext[i] = *(BYTE*)(Peticion->Param2);
+                        MIWI434_canal_optimo_ext[i] = *(BYTE*)(Peticion->Param2 + 1);
+                        MIWI868_RSSI_optimo_ext[i] = *(BYTE*)(Peticion->Param2 + 2);
+                        MIWI868_canal_optimo_ext[i] = *(BYTE*)(Peticion->Param2 + 3);
+                        MIWI2400_RSSI_optimo_ext[i] = *(BYTE*)(Peticion->Param2 + 4);
+                        MIWI2400_canal_optimo_ext[i] = *(BYTE*)(Peticion->Param2 + 5);
+                        CanalOptimoExt[i] = *(BYTE*)(Peticion->Param2 + 6);
+                        riCanalOptimoExt[i] = *(BYTE*)(Peticion->Param2 + 7);
                         //Manda un mensaje a Optm diciendole que ha llegado un mensaje de cambio de canal.
                         BYTE InfoCambio[] = {3, *(BYTE*)(Peticion->Param2 + 6), *(BYTE*)(Peticion->Param2 + 7)};
                         OPTM_MSSG_RCVD PeticionProcMensCambio;
@@ -398,13 +395,13 @@ void CRM_Repo_Env(BYTE canal, BYTE InfoRSSI)
 void CRM_Repo_NRTx(BYTE n_rtx, BYTE canal, radioInterface ri){
     switch(ri){
         case MIWI_0434:
-            MIWI434_rtx[canal] = n_rtx;
+            MIWI434_rtx[canal] += n_rtx;
             break;
         case MIWI_0868:
-            MIWI868_rtx[canal] = n_rtx;
+            MIWI868_rtx[canal] += n_rtx;
             break;
         case MIWI_2400:
-            MIWI2400_rtx[canal] = n_rtx;
+            MIWI2400_rtx[canal] += n_rtx;
             break;
     }
 }
@@ -413,7 +410,7 @@ void CRM_Repo_Mensajes_Intercambiados(BYTE *Address)
 {
     BYTE i;
     for(i = 0; i < CONNECTION_SIZE; i++){
-        if(isSameAddress(Address, Repo_Conn_Table[i].Address)){
+        if(isSameAddress(Address, ConnectionTable[i].Address)){
             NumMssgIntercambiados[i]++;
             break;
         }
@@ -490,6 +487,56 @@ void CRM_Repo_ProbCambio(BYTE Valor)
 
 /*Fin de las funciones internas*/
 
+void inicializarTablaAtacantes(){
+    BYTE i,j,k;
+    BYTE TablaDirecciones[CONNECTION_SIZE+1][MY_ADDRESS_LENGTH];
+
+    for (i = 0; i < CONNECTION_SIZE+1; i++){
+        if (i < CONNECTION_SIZE && CONNECTION_SIZE != 0){
+            for (k = 0; k < MY_ADDRESS_LENGTH; k++){
+                TablaDirecciones[i][k] = ConnectionTable[i].Address[k];
+            }
+        } else {
+            for (k = 0; k < MY_ADDRESS_LENGTH; k++){
+                TablaDirecciones[i][k] = myLongAddress[k];
+            }
+        }
+
+    }
+    
+    for (i = 0; i < CONNECTION_SIZE+1; i++){
+        for (j = i*(CONNECTION_SIZE+1); j < (i*(CONNECTION_SIZE+1))+CONNECTION_SIZE+1; j++){
+            for (k = 0; k < MY_ADDRESS_LENGTH; k++){
+                Tabla_Atacantes[j].direccionAtacante[k] = TablaDirecciones[i][k];
+            }
+            Tabla_Atacantes[j].esAtacante = 0;
+        }
+    }
+
+    j = 0;
+    for (i = 0; i < (CONNECTION_SIZE+1)*(CONNECTION_SIZE+1); i++){
+        if (j < CONNECTION_SIZE+1){
+            for (k = 0; k < MY_ADDRESS_LENGTH; k++){
+                Tabla_Atacantes[i].direccionDetector[k] = TablaDirecciones[j][k];
+            }
+            j++;
+        } else if (j == CONNECTION_SIZE+1){
+            j = 0;
+            for (k = 0; k < MY_ADDRESS_LENGTH; k++){
+                Tabla_Atacantes[i].direccionDetector[k] = TablaDirecciones[j][k];
+            }
+            j++;
+        }
+    }
+}
+
+BOOL CRM_Repo_Reiniciar_Potencias(void){
+    BYTE i;
+    for (i = 0; i < MAX_VECTOR_POTENCIA; i++){
+        vectorPotencias[i] = 0xFF;
+    }
+}
+
 /*Funciones de inicializacion*/
 BOOL CRM_Repo_Init(void)
 {
@@ -542,6 +589,8 @@ BOOL CRM_Repo_Init(void)
         MIWI2400_rtx[i] = 0;
     }
     #endif
+
+    inicializarTablaAtacantes();
 
 
     return TRUE;

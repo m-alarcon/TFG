@@ -37,15 +37,6 @@
 //Cambiar según necesidades
 
 
-void DataClustering(void);
-coord CalculoCoordenadas();
-void NormalizarCoordenadas();
-void CalculoClusters();
-void inicializarTablaAtacantes();
-double CalculoDistancia(coord pto1, coord pto2);
-BYTE* hayAtacante();
-void Envio_Datos_Atacantes(at data);
-void Recibir_info(void);
 
 #endif	/* DATACLUSTERING_H */
 

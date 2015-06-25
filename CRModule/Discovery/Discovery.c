@@ -64,7 +64,8 @@ void* CRM_Disc_Mssg_Rcvd(DISC_MSSG_RCVD *Peticion)
             resultado = &canal;
             break;
         case(ActActvScn):
-            CRM_Disc_ActiveScan(Peticion);
+            canal = CRM_Disc_ActiveScan(Peticion);
+            resultado = &canal;
             break;
         case(ActServs):
             CRM_Disc_Services(Peticion);

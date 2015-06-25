@@ -536,6 +536,12 @@ void InitCRModule(void){
     mPORTDRead();
     ConfigIntCN(CHANGE_INT_ON | CHANGE_INT_PRI_3);//6);
 
+    WORD TiempoT5 = 1; //En mseg;.
+    WORD CuentaT5 = (TiempoT5)*(CLOCK_FREQ/((1<<mOSCGetPBDIV())*Prescaler*1000));
+
+    OpenTimer5(T5_ON | T1_IDLE_CON | T5_GATE_OFF | T5_PS_1_32 | T4_SOURCE_INT, CuentaT5);
+    ConfigIntTimer5(T5_INT_ON | T5_INT_PRIOR_1 | T5_INT_SUB_PRIOR_3);    
+    
     CRM_Optm_Init();
     CRM_Poli_Init();
     CRM_AccCtrl_Init();
@@ -564,7 +570,7 @@ void InitCRModule(void){
 //caso de que CRModule est? definido el usuario NO DEBER? RECONFIGURAR LA
 //INTERRUPCION PUESTO QUE YA ESTA HECHO en boardinit() y podria afectar a la
 //ejecucion de las rutinas.
-void __ISR(_TIMER_4_VECTOR, ipl3)RutinaOptimizer(void)
+void __ISR(_TIMER_4_VECTOR, ipl3AUTO)RutinaOptimizer(void)
 {
     //Printf("\r\nSe ejecuta la rutina cognitiva.");
     #if defined(CRMODULE)
@@ -580,7 +586,20 @@ void __ISR(_TIMER_4_VECTOR, ipl3)RutinaOptimizer(void)
 }
 /*Fin de la rutina de interrupcion*/
 
-void __ISR(_CHANGE_NOTICE_VECTOR, ipl6)IntCN(void)
+/*******************************************************************************
+ * Function:    IntTmp()
+ * Input:       None.
+ * Output:      None.
+ * Overview:    Timer interruption routine.
+ ******************************************************************************/
+void __ISR(_TIMER_5_VECTOR, ipl1AUTO)IntTmp(void) {
+
+    CRM_Timer5_Int();
+    
+    mT5ClearIntFlag();
+}
+
+void __ISR(_CHANGE_NOTICE_VECTOR, ipl6AUTO)IntCN(void)
 {
     mPORTDRead();
     //mPORTDRead(); //Vaciar
