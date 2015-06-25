@@ -98,7 +98,7 @@ typedef struct _REPO_MSSG_RCVD
 
 typedef struct coordenadas {
     double RSSI;
-    double tiempo;
+    MIWI_TICK tiempo;
 } coord;
 
 typedef struct cluster {

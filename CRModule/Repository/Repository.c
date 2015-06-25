@@ -35,7 +35,21 @@
 //Para el optimizer saber cuantas peticiones llevamos en total.
 BYTE NumeroDePeticionesDeCambio;
 extern radioInterface riActual;
+MIWI_TICK TiempoAnterior;
+BYTE *pRSSI;
+BYTE RSSI = 0;
+double initRad = 0.3;
+MIWI_TICK tiempoMax;
+double potenciaMax;
+int aprendizaje = 0;
+int normalizado = 0;
+int clustersDone = 0;
+BYTE *pAttackerAddr;
+BYTE nDetectado = 0;
+int paquetesRecibidos;
 
+int nClusters = 0;
+cl cluster;
 /*****************************************************************************/
 /******************************FIN DE VARIABLES*******************************/
 /*****************************************************************************/
@@ -324,17 +338,24 @@ BOOL CRM_Repo_NodosRed(REPO_MSSG_RCVD *Peticion)
                     case RSSINetNode:
                     {
                         //Le he pasado en Param2 el vector con todos los RSSI.
-                        //Formato: RSSIResultado434, CanalOptimo434, RSSIResultado868, CanalOptimo868, RSSIResultado2400, CanalOptimo2400, CanalOptimo, ri
-                        MIWI434_RSSI_optimo_ext[i] = *(BYTE*)(Peticion->Param2);
-                        MIWI434_canal_optimo_ext[i] = *(BYTE*)(Peticion->Param2 + 1);
-                        MIWI868_RSSI_optimo_ext[i] = *(BYTE*)(Peticion->Param2 + 2);
-                        MIWI868_canal_optimo_ext[i] = *(BYTE*)(Peticion->Param2 + 3);
-                        MIWI2400_RSSI_optimo_ext[i] = *(BYTE*)(Peticion->Param2 + 4);
-                        MIWI2400_canal_optimo_ext[i] = *(BYTE*)(Peticion->Param2 + 5);
-                        CanalOptimoExt[i] = *(BYTE*)(Peticion->Param2 + 6);
-                        riCanalOptimoExt[i] = *(BYTE*)(Peticion->Param2 + 7);
+                        //Formato: RSSIResultado868, CanalOptimo868, RSSIResultado2400, CanalOptimo2400, CanalOptimo, ri
+                        MIWI868_RSSI_optimo_ext[i] = *(BYTE*)(Peticion->Param2);
+                        MIWI868_canal_optimo_ext[i] = *(BYTE*)(Peticion->Param2 + 1);
+                        MIWI2400_RSSI_optimo_ext[i] = *(BYTE*)(Peticion->Param2 + 2);
+                        MIWI2400_canal_optimo_ext[i] = *(BYTE*)(Peticion->Param2 + 3);
+                        CanalOptimoExt[i] = *(BYTE*)(Peticion->Param2 + 4);
+                        riCanalOptimoExt[i] = *(BYTE*)(Peticion->Param2 + 5);
+                        BYTE RSSI_canal_optimo;
+                        switch(riCanalOptimoExt[i]){
+                            case MIWI_0868:
+                                RSSI_canal_optimo = MIWI868_canal_optimo_ext[i];
+                                break;
+                            default:
+                                RSSI_canal_optimo = MIWI2400_canal_optimo_ext[i];
+                                break;
+                        }
                         //Manda un mensaje a Optm diciendole que ha llegado un mensaje de cambio de canal.
-                        BYTE InfoCambio[] = {3, *(BYTE*)(Peticion->Param2 + 6), *(BYTE*)(Peticion->Param2 + 7)};
+                        BYTE InfoCambio[] = {3, *(BYTE*)(Peticion->Param2 + 6), *(BYTE*)(Peticion->Param2 + 7), RSSI_canal_optimo};
                         OPTM_MSSG_RCVD PeticionProcMensCambio;
                         BYTE ProcReq;
                         if(EstadoGT == EsperandoDecFinal){
@@ -537,6 +558,40 @@ BOOL CRM_Repo_Reiniciar_Potencias(void){
     }
 }
 
+BOOL CalculoCoordenadas(BYTE *RSSI){
+    
+    MIWI_TICK TiempoActual;
+    MIWI_TICK TiempoPaquete;
+    coord coordenadas;
+    if ( /*paquetesRecibidos == 0 && //Paquetes recibidos no. Comprobar que sea el primer paquete de un nodo.*/ GetRSSI(riActual,pRSSI) == 0x00 ){  //Si es correcto el valor de RSSI y es el primer dato de un nodo
+        Printf("\r\nSe ha recibido el primer paquete\r\n");
+        inicializarTablaAtacantes();
+        TiempoPaquete = TiempoActual;
+        TiempoAnterior = TiempoActual; //Para el tiempo del proximo paquete
+        tiempoMax = TiempoPaquete;
+        potenciaMax = *RSSI;
+        coordenadas.tiempo = TiempoPaquete;
+        coordenadas.RSSI = *RSSI;        
+        return TRUE;
+    } else {
+        if ( paquetesRecibidos > 0 && GetRSSI(ri,RSSI) == 0x00){
+            Printf("\r\nSe han recibido mas paquetes\r\n");
+            TiempoActual = MiWi_TickGet();
+            TiempoPaquete.Val = MiWi_TickGetDiff(TiempoActual, TiempoAnterior);
+            if(TiempoPaquete.Val > tiempoMax.Val) tiempoMax = TiempoPaquete;
+            if(*RSSI > potenciaMax) potenciaMax = *RSSI;
+            TiempoAnterior = TiempoActual;
+
+            coordenadas.tiempo = TiempoPaquete;
+            coordenadas.RSSI = (double) *RSSI;
+            return TRUE;
+        } else {
+            coordenadas.RSSI = 0;
+            return FALSE;
+        }
+    }
+}
+
 /*Funciones de inicializacion*/
 BOOL CRM_Repo_Init(void)
 {
@@ -557,11 +612,14 @@ BOOL CRM_Repo_Init(void)
 
     NumeroDePeticionesDeCambio = NumeroDePeticionesInicial;
 
+    TiempoAnterior.Val = 0;
+    paquetesRecibidos = 0;
     /*Inicialización vector potencias*/
+    /*
     for (i = 0; i < MAX_VECTOR_POTENCIA; i++){
         vectorPotencias[i] = 0xFF;
     }
-
+*/
     /*Inicialización número mensajes intercambiados*/
     for(i = 0; i < CONNECTION_SIZE; i++){
         NumMssgIntercambiados[i] = 0;
@@ -589,9 +647,6 @@ BOOL CRM_Repo_Init(void)
         MIWI2400_rtx[i] = 0;
     }
     #endif
-
-    inicializarTablaAtacantes();
-
 
     return TRUE;
 }

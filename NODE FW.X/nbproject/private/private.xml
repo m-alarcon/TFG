@@ -8,16 +8,18 @@
             <file>file:/C:/Users/root/Documents/TFG/NODE%20FW.X/CWSN%20LSI%20Node/Include/NodeHAL.h</file>
             <file>file:/C:/Users/root/Documents/TFG/CRModule/Discovery/Discovery.c</file>
             <file>file:/C:/Users/root/Documents/TFG/CRModule/Repository/Repository.c</file>
-            <file>file:/C:/Users/root/Documents/TFG/CRModule/Optimizer/Optimizer.c</file>
-            <file>file:/C:/Users/root/Documents/TFG/NODE%20FW.X/Aplicacion.c</file>
             <file>file:/C:/Users/root/Documents/TFG/NODE%20FW.X/CWSN%20LSI%20Node/WirelessProtocols/MiWi/MiWi.c</file>
             <file>file:/C:/Users/root/Documents/TFG/NODE%20FW.X/DataClustering.c</file>
-            <file>file:/C:/Users/root/Documents/TFG/CRModule/Policies/Policies.c</file>
-            <file>file:/C:/Users/root/Documents/TFG/CRModule/Execution/Execution.c</file>
+            <file>file:/C:/Users/root/Documents/TFG/NODE%20FW.X/CWSN%20LSI%20Node/Include/WirelessProtocols/SymbolTime.h</file>
             <file>file:/C:/Users/root/Documents/TFG/NODE%20FW.X/CWSN%20LSI%20Node/NodeHAL.c</file>
-            <file>file:/C:/Users/root/Documents/TFG/CRModule/VCC/VCC.c</file>
-            <file>file:/C:/Users/root/Documents/TFG/NODE%20FW.X/CWSN%20LSI%20Node/HardwareProfile.c</file>
+            <file>file:/C:/Users/root/Documents/TFG/CRModule/Execution/Execution.c</file>
             <file>file:/C:/Users/root/Documents/TFG/NODE%20FW.X/CWSN%20LSI%20Node/Include/WirelessProtocols/ConfigApp.h</file>
+            <file>file:/C:/Users/root/Documents/TFG/CRModule/Optimizer/Optimizer.c</file>
+            <file>file:/C:/Users/root/Documents/TFG/NODE%20FW.X/Aplicacion.c</file>
+            <file>file:/C:/Users/root/Documents/TFG/CRModule/VCC/VCC.c</file>
+            <file>file:/C:/Users/root/Documents/TFG/CRModule/Policies/Policies.c</file>
+            <file>file:/C:/Users/root/Documents/TFG/NODE%20FW.X/CWSN%20LSI%20Node/HardwareProfile.c</file>
+            <file>file:/C:/Users/root/Documents/TFG/NODE%20FW.X/CWSN%20LSI%20Node/WirelessProtocols/SymbolTime.c</file>
             <file>file:/C:/Users/root/Documents/TFG/NODE%20FW.X/MainAppCode_NodeTest.c</file>
         </group>
     </open-files>

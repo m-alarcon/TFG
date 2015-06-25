@@ -24,20 +24,7 @@
 
 #include "DataClustering.h"
 /*
-int t0 = 0;
-BYTE *pRSSI;
-BYTE RSSI = 0;
-double initRad = 0.3;
-double tiempoMax;
-double potenciaMax;
-int aprendizaje = 0;
-int normalizado = 0;
-int clustersDone = 0;
-BYTE *pAttackerAddr;
-BYTE nDetectado = 0;
 
-int nClusters = 0;
-cl cluster;
 
 void DataClustering(void){
     BYTE i;
@@ -101,7 +88,7 @@ coord CalculoCoordenadas(){
     double t1;
     double tiempoPaquete;
     coord coordenadas;
-    if ( paquetesRecibidos == 0 && GetRSSI(ri,pRSSI) == 0x00 ){  //Si es correcto el valor de RSSI y es el primer dato
+    if ( paquetesRecibidos == 0 && GetRSSI(ri,pRSSI) == 0x00 ){  //Si es correcto el valor de RSSI y es el primer dato de un nodo
         Printf("\r\nSe ha recibido el primer paquete\r\n");
         inicializarTablaAtacantes();
         tiempoPaquete = learningTime;

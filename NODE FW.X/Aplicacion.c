@@ -100,15 +100,12 @@ BOOL Rcvd_Buffer1(RECEIVED_MESSAGE *Buffer)
     switch(RI_MASK){
         case MIWI_0434_RI_MASK:
             riData = MIWI_0434;
-            Printf("\r\nSe van a descartar los datos en la interfaz de 434");
             break;
         case MIWI_0868_RI_MASK:
             riData = MIWI_0868;
-            Printf("\r\nSe van a descartar los datos en la interfaz de 868");
             break;
         case MIWI_2400_RI_MASK:
             riData = MIWI_2400;
-            Printf("\r\nSe van a descartar los datos en la interfaz de 2400");
             break;
     }
             
@@ -179,11 +176,7 @@ void Recibir_info(void){
                     break;
                 default:
                     //TODO es un mensaje normal.
-                    Printf("\r\nEs un mensaje de aplicacion.");
-                    if (MSSG_PROC_OPTM == 1 && CHNG_MSSG_RCVD == 0){//Como ya se ha procesado en optimizer se descarta el paquete.
-                        Printf("\r\nMensaje de aplicacion recibido");
-                        MSSG_PROC_OPTM = 0;
-                    }
+                    Printf("\r\nMensaje de aplicacion recibido");
                     break;
             }
         }

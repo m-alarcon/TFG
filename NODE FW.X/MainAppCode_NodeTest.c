@@ -38,7 +38,7 @@ BYTE powerStep1 = 32;
 BYTE ri_RI_MASK1 = MIWI_0434_RI_MASK;
 #endif
 
-radioInterface riActual = MIWI_0434;
+radioInterface riActual = MIWI_0868;
 radioInterface riData;
 BYTE canalCambio = 0;
 BYTE primeraVez = 0;
