@@ -96,16 +96,12 @@ BOOL Rcvd_Buffer1(RECEIVED_MESSAGE *Buffer)
         return FALSE;
     }
     
-    BYTE RI_MASK = WhichRIHasData();       
-    
-    switch(RI_MASK){
-        case MIWI_0434_RI_MASK:
-            riData = MIWI_0434;
-            Printf("\r\nMensaje por 434 recibido.");
-            break;
-        default:
-            riData = riActual;
-            break;
+    if(!GetPayloadToRead(MIWI_0434)){
+        riData = riActual;
+    } else if(!GetPayloadToRead(riActual)){
+        riData = MIWI_0434;
+    } else {
+        return FALSE;
     }
             
     

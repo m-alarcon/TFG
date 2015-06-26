@@ -226,7 +226,7 @@ void CRM_Repo_NodosEnv(void);
 void CRM_Repo_Env(BYTE canal, BYTE InfoRSSI);
 void CRM_Repo_NRTx(BYTE n_rtx, BYTE canal, radioInterface ri);
 void CRM_Repo_Mensajes_Intercambiados(BYTE *Address);
-void CRM_Repo_Get_RSSI(radioInterface ri, BYTE position, OUTPUT BYTE *RSSI, OUTPUT BYTE *channel);
+BYTE* CRM_Repo_Get_RSSI(radioInterface ri, BYTE position, BYTE *RSSI, BYTE *channel);
 void CRM_Repo_Str_RSSI(radioInterface ri);
 BOOL CRM_Repo_Reiniciar_Potencias(void);
 BOOL CRM_Repo_Reiniciar_RTx(void);
