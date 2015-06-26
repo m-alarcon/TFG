@@ -101,10 +101,13 @@ BOOL CRM_Repo_Store(REPO_MSSG_RCVD *Peticion)
             CRM_Repo_Mensajes_Intercambiados((*Peticion).Param1);
             break;
         case (SaveRSSI):
-            CRM_Repo_Str_RSSI(*(radioInterface*)(Peticion->Param1));
+            CRM_Repo_Str_RSSI(*(BYTE*)(Peticion->Param1));
             break;
         case (RstRSSI):
             CRM_Repo_Reiniciar_Potencias();
+            break;
+        case (RstRTx):
+            CRM_Repo_Reiniciar_RTx();
             break;
         default:
             break;
@@ -355,7 +358,7 @@ BOOL CRM_Repo_NodosRed(REPO_MSSG_RCVD *Peticion)
                                 break;
                         }
                         //Manda un mensaje a Optm diciendole que ha llegado un mensaje de cambio de canal.
-                        BYTE InfoCambio[] = {3, *(BYTE*)(Peticion->Param2 + 6), *(BYTE*)(Peticion->Param2 + 7), RSSI_canal_optimo};
+                        BYTE InfoCambio[] = {3, *(BYTE*)(Peticion->Param2 + 4), *(BYTE*)(Peticion->Param2 + 5), RSSI_canal_optimo};
                         OPTM_MSSG_RCVD PeticionProcMensCambio;
                         BYTE ProcReq;
                         if(EstadoGT == EsperandoDecFinal){
@@ -363,6 +366,7 @@ BOOL CRM_Repo_NodosRed(REPO_MSSG_RCVD *Peticion)
                         } else if(EstadoGT == EsperandoDecisionRestoNodos){
                             Printf("\r\nDos nodos han decidido cambiar de canal al mismo tiempo. Se vuelve al principio.");
                             ProcReq = ProcRespCambio;
+                            limpiaBufferRX();
                         } else {
                             ProcReq = ProcCambioCanal;
                         }                        
@@ -416,13 +420,13 @@ void CRM_Repo_Env(BYTE canal, BYTE InfoRSSI)
 void CRM_Repo_NRTx(BYTE n_rtx, BYTE canal, radioInterface ri){
     switch(ri){
         case MIWI_0434:
-            MIWI434_rtx[canal] += n_rtx;
+            MIWI434_rtx[canal] = n_rtx;
             break;
         case MIWI_0868:
-            MIWI868_rtx[canal] += n_rtx;
+            MIWI868_rtx[canal] = n_rtx;
             break;
         case MIWI_2400:
-            MIWI2400_rtx[canal] += n_rtx;
+            MIWI2400_rtx[canal] = n_rtx;
             break;
     }
 }
@@ -464,12 +468,6 @@ void CRM_Repo_Get_RSSI(radioInterface ri, BYTE position, OUTPUT BYTE *RSSI, OUTP
     BYTE array[MIWI2400NumChannels] = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
     BYTE arrayCh[] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15};
     switch(ri){
-        case MIWI_0434:
-            n = MIWI0434NumChannels;
-            for (i = 0; i < n; i++){
-                array[i] = MIWI434_RSSI_values[i];                 
-            }
-            break;
         case MIWI_0868:
             n = MIWI0868NumChannels;
             for (i = 0; i < n; i++){
@@ -556,6 +554,20 @@ BOOL CRM_Repo_Reiniciar_Potencias(void){
     for (i = 0; i < MAX_VECTOR_POTENCIA; i++){
         vectorPotencias[i] = 0xFF;
     }
+}
+
+BOOL CRM_Repo_Reiniciar_RTx(void){
+    BYTE i;
+    #ifdef MIWI_0868_RI
+    for(i = 0; i < MIWI0868NumChannels; i++){
+        MIWI868_rtx[i] = 0;
+    }
+    #endif
+    #ifdef MIWI_2400_RI
+    for(i = 0; i < MIWI2400NumChannels; i++){
+        MIWI2400_rtx[i] = 0;
+    }
+    #endif
 }
 
 BOOL CalculoCoordenadas(BYTE *RSSI){

@@ -3166,8 +3166,10 @@ BYTE Send_Buffer(radioInterface ri, BYTE *Buffer, BYTE AddrMode, BYTE *Address, 
         switch(ri){
             case MIWI_0434:
                 Printf("\r\nSe manda mensaje broadcast por 434");
+                break;
             default:
                 Printf("\r\nSe manda mensaje broadcast por 868 o 2400");
+                break;
         }        
         i = SendPckt(ri, AddrMode, NULL);
     } else {

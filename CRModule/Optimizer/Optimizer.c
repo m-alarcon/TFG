@@ -100,12 +100,12 @@ extern radioInterface riData;
     WORD ProbChngPropia;
     //Fin de optimizer de Elena.
 
-    //Teoria de juegos
-    BYTE n_msg = 3; /*Numero de mensajes necesarios para cambiar de canal. Cambiar con el número que sea realmente*/
-    WORD CosteCambio, CosteOcupado, CosteNoCambio;
+    //Teoria de juegos    
     BYTE nRespuestas;
     BYTE nRespuestasAfirmativas;
     BYTE nRespuestasNegativas;
+    BYTE n_msg = 3; /*Numero de mensajes necesarios para cambiar de canal. Cambiar con el número que sea realmente*/
+    WORD CosteCambio, CosteOcupado, CosteNoCambio;
     
     //Data Clustering
     double learningTimeMax = 30000;
@@ -385,12 +385,16 @@ NOACEPTA: //Si no queremos notifcar el no cambio comentariamos y dejaríamos solo
                     inicioCambio = FALSE;
                     nRespuestas = 0;
                     nRespuestasAfirmativas = 0;
-                    nRespuestasNegativas = 0;
-                    SWDelay(2000);           
+                    nRespuestasNegativas = 0;           
                     return FALSE;
                 }
                 
                 BOOL cambio = CRM_Optm_Calcular_Costes(*(BYTE*)(PeticionRepoRTx.Param2));
+                //Reinicio el numero de retransmisiones
+                REPO_MSSG_RCVD PeticionRepoResetRTx;
+                PeticionRepoResetRTx.Action = ActStr;
+                PeticionRepoResetRTx.DataType = RstRTx;
+                CRM_Message(NMM, SubM_Repo, &PeticionRepoResetRTx);
                 if(cambio == TRUE){
                     Printf("\r\nNotifico al resto de nodos que quiero cambiar.");
                     //Notifico a los otros nodos que quiero cambiar de canal y hago 4)
@@ -445,7 +449,6 @@ NOACEPTA: //Si no queremos notifcar el no cambio comentariamos y dejaríamos solo
                     nRespuestas = 0;
                     nRespuestasAfirmativas = 0;
                     nRespuestasNegativas = 0;
-                    SWDelay(2000);
                 }
             } else if (EstadoGT == EsperandoDecisionRestoNodos){
                 nRespuestas++;
@@ -493,7 +496,6 @@ NOACEPTA: //Si no queremos notifcar el no cambio comentariamos y dejaríamos solo
                         nRespuestas = 0;
                         nRespuestasAfirmativas = 0;
                         nRespuestasNegativas = 0;
-                        SWDelay(2000);
                     } else {
                         Printf("\r\nRespuesta negativa de un nodo con el que no me comunico mucho.");
                         MilisDeTimeOut = 0;
@@ -526,7 +528,6 @@ NOACEPTA: //Si no queremos notifcar el no cambio comentariamos y dejaríamos solo
                             nRespuestas = 0;
                             nRespuestasAfirmativas = 0;  
                             nRespuestasNegativas = 0;
-                            SWDelay(2000);
                         }
                     }
                 } else {
@@ -598,25 +599,16 @@ NOACEPTA: //Si no queremos notifcar el no cambio comentariamos y dejaríamos solo
                         nRespuestas = 0;
                         nRespuestasAfirmativas = 0;
                         nRespuestasNegativas = 0;
-                        SWDelay(2000);
                     }
                 } else {
-                    //Se reinicia todo.
-                    
-                    Printf("\r\nSi el otro nodo estaba en un canal diferente al mio vuelvo al que estaba.");
-                    OPTM_MSSG_RCVD PeticionCambio;
-                    PeticionCambio.Action = ActChnHop;
-                    PeticionCambio.Param1 = &BackupCanal;
-                    PeticionCambio.Transceiver = Peticion->Transceiver;
-                    CRM_Message(NMM, SubM_Exec, &PeticionCambio);
+                    //Se reinicia todo.                    
                     
                     EstadoGT = Clear;
                     CHNG_MSSG_RCVD = 0;
                     inicioCambio = FALSE;
                     nRespuestas = 0;
                     nRespuestasAfirmativas = 0;
-                    nRespuestasNegativas = 0;
-                    SWDelay(2000);                    
+                    nRespuestasNegativas = 0;                   
                 }
             }
         }
@@ -772,7 +764,6 @@ NOACEPTA: //Si no queremos notifcar el no cambio comentariamos y dejaríamos solo
                             nRespuestas = 0;
                             nRespuestasAfirmativas = 0;   
                             nRespuestasNegativas = 0;
-                            SWDelay(2000);
                         } else {
                             
                             Printf("Cambio de canal aunque alguno no quiera el mismo que yo.");
@@ -804,7 +795,6 @@ NOACEPTA: //Si no queremos notifcar el no cambio comentariamos y dejaríamos solo
                             nRespuestas = 0;
                             nRespuestasAfirmativas = 0;   
                             nRespuestasNegativas = 0; 
-                            SWDelay(2000);
                             
                         }
                     }                    
@@ -1315,9 +1305,8 @@ BOOL CRM_Optm_Cons(OPTM_MSSG_RCVD *Peticion){
             PeticionRepoRSSI.Action = ActStr;
             PeticionRepoRSSI.DataType = SaveRSSI;
             PeticionRepoRSSI.Param1 = &ri;
-            
             CRM_Message(NMM, SubM_Repo, &PeticionRepoRSSI);
-            
+            Printf("\r\nHa guardado los RSSI de la interfaz a la que quieren cambiar");
             //Pido a repo el canal Optimo que he sacado antes de la ri que quiere cambiarse el otro nodo.
             //Pido a repo el 2º mejor canal, el 3º y el 4º.
             BYTE MejorCanal, SegundoCanal, TercerCanal, CuartoCanal, position;
@@ -1329,6 +1318,7 @@ BOOL CRM_Optm_Cons(OPTM_MSSG_RCVD *Peticion){
             position = 0;
             PeticionRepoCanales.Param2 = &position;
             CRM_Message(NMM, SubM_Repo, &PeticionRepoCanales);//Peticion mejor canal.
+            Printf("\r\nSe ha recibido el mejor canal.");
             MejorCanal  = *(BYTE*)(PeticionRepoCanales.Param4);
             position = 1;
             PeticionRepoCanales.Param2 = &position;
@@ -1352,8 +1342,8 @@ BOOL CRM_Optm_Cons(OPTM_MSSG_RCVD *Peticion){
             } else {
                 BYTE diff;
                 if (*(BYTE*)(PeticionRepoCanales.Param3) > *(BYTE*)(Peticion->Param1 + 3)){
-                    diff = *(BYTE*)(PeticionRepoCanales.Param3) - *(BYTE*)(Peticion->Param1 + 3);
-                } else { diff = *(BYTE*)(PeticionRepoCanales.Param3) - *(BYTE*)(Peticion->Param1 + 3); }
+                    diff = (*(BYTE*)(PeticionRepoCanales.Param3) - *(BYTE*)(Peticion->Param1 + 3));
+                } else { diff = (*(BYTE*)(PeticionRepoCanales.Param3) - *(BYTE*)(Peticion->Param1 + 3)); }
                 if(diff < 0x05) cambio = TRUE;
             }          
             //Aqui comprueba si el canal optimo y la ri concuerdan
@@ -1455,7 +1445,6 @@ BOOL CRM_Optm_Int(void)
             nRespuestas = 0;
             nRespuestasAfirmativas = 0;
             nRespuestasNegativas = 0;
-            SWDelay(2000);
             MilisDeTimeOut = 0;//Ponemos a 0.
 //            MiApp_RemoveConnection(0); //Eliminamos de la tabla de conexiones.
         }
@@ -1515,6 +1504,7 @@ BOOL CRM_Optm_Int(void)
 #endif
             //TODO aqui deben ir las llamadas a las funciones que deba ejecutar el
             //optimizer.
+#if defined GAMETHEORY 
     if(flagPrimeraEjecucion == 0){                
         limpiaBufferRX();
         flagPrimeraEjecucion = 1;
@@ -1522,12 +1512,11 @@ BOOL CRM_Optm_Int(void)
         PrintChar(GetPayloadToRead(riActual));
     }
     
-    BYTE RI_MASK = WhichRIHasData();        
+/*    BYTE RI_MASK = WhichRIHasData();        
     if(RI_MASK != 0){
         //Cada vez que entramos incluimos la potencia del paquete que hemos recibido y sumamos 1 al número de mensajes intercambiados con ese nodo.
         //paquetesRecibidos++;MANDAR MENSAJE A REPO PARA SUMAR 1 A LOS PAQUETES RECIBIDOS.////////////////////////////////////////////////////////////////////////////////////////
 
-#if defined GAMETHEORY 
         switch(RI_MASK){
             case MIWI_0434_RI_MASK:
                 riData = MIWI_0434;
@@ -1555,30 +1544,33 @@ BOOL CRM_Optm_Int(void)
 
             CRM_Message(NMM, SubM_Repo, &PeticionRepoMssg);
         }
-        
-        if (EstadoGT == Clear){
-            //Pedir a repo el numero de retransmisiones en el canal actual
-            BYTE BackupCanal = GetOpChannel(riActual);
-            REPO_MSSG_RCVD PeticionRepoRTx;
-            PeticionRepoRTx.Action = ActSndDta;
-            PeticionRepoRTx.DataType = EnvRTx;
-            PeticionRepoRTx.Param1 = &BackupCanal;
-            PeticionRepoRTx.Transceiver = riActual;
-
-            CRM_Message(NMM, SubM_Repo, &PeticionRepoRTx);
-           
-            inicioCambio = CRM_Optm_Calcular_Costes(*(BYTE*)(PeticionRepoRTx.Param2));
-            if (inicioCambio){                
-                OPTM_MSSG_RCVD PeticionInicioCambio;
-                PeticionInicioCambio.Action = SubActCambio;
-                PeticionInicioCambio.Transceiver = riActual;
-                CRM_Optm_Cons(&PeticionInicioCambio);
-            }
-        }
-#endif
-        
     }
+*/    
+    if (EstadoGT == Clear){
+        //Pedir a repo el numero de retransmisiones en el canal actual
+        BYTE BackupCanal = GetOpChannel(riActual);
+        REPO_MSSG_RCVD PeticionRepoRTx;
+        PeticionRepoRTx.Action = ActSndDta;
+        PeticionRepoRTx.DataType = EnvRTx;
+        PeticionRepoRTx.Param1 = &BackupCanal;
+        PeticionRepoRTx.Transceiver = riActual;
 
+        CRM_Message(NMM, SubM_Repo, &PeticionRepoRTx);
+
+        inicioCambio = CRM_Optm_Calcular_Costes(*(BYTE*)(PeticionRepoRTx.Param2));
+        //Reinicio el numero de retransmisiones
+        REPO_MSSG_RCVD PeticionRepoResetRTx;
+        PeticionRepoResetRTx.Action = ActStr;
+        PeticionRepoResetRTx.DataType = RstRTx;
+        CRM_Message(NMM, SubM_Repo, &PeticionRepoResetRTx);
+        if (inicioCambio){
+            OPTM_MSSG_RCVD PeticionInicioCambio;
+            PeticionInicioCambio.Action = SubActCambio;
+            PeticionInicioCambio.Transceiver = riActual;
+            CRM_Optm_Cons(&PeticionInicioCambio);
+        }            
+    }
+#endif
         }
 
     }
@@ -1611,8 +1603,8 @@ BOOL CRM_Timer5_Int(void)
         reinicioAtacantesTime = 0;
     }*/
  
-    if(mseg==10)
-        Recibir_info();
+    //if(mseg==10)
+        
     
     if(mseg<Periodo)
     {

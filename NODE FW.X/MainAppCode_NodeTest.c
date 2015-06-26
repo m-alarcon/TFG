@@ -1340,9 +1340,11 @@ CRMODULE_TEST:
         //continue;
         Rutina_Principal();
 
-DC_TEST:          
-                                
-                                break;
+DC_TEST:   
+    if(WhichRIHasData() != 0){
+        Recibir_info();  
+    }
+        //                        break;
     }
     return 0;
 }

@@ -40,10 +40,11 @@ void Enviar_Paquete_Datos_App(radioInterface ri, BYTE modo, BYTE *addr){
         i = SendPckt(ri, modo, addr);
         if (i != NO_ERROR){
             Printf(" => FALLO");
-            i = GetFreeTXBufSpace(ri);
+            //i = GetFreeTXBufSpace(ri);
             //Printf("\r\nCapacidad libre del buffer de TX: ");
             //PrintDec(i);
             n_rtx++;
+            SWDelay(100);
             if(n_rtx >= maxRTxXDefecto){
                 Printf("\r\nSe ha alcanzado el numero maximo de retransmisiones, se descarta el paquete.");
                 switch(ri){
@@ -91,7 +92,7 @@ void limpiaBufferRX(void){
 BOOL Rcvd_Buffer1(RECEIVED_MESSAGE *Buffer)
 {
     BYTE i, err;
-    if (!GetPayloadToRead(ALL)) {
+    if (!GetPayloadToRead(MIWI_0434) && !GetPayloadToRead(riActual)) {
         return FALSE;
     }
     
@@ -100,12 +101,10 @@ BOOL Rcvd_Buffer1(RECEIVED_MESSAGE *Buffer)
     switch(RI_MASK){
         case MIWI_0434_RI_MASK:
             riData = MIWI_0434;
+            Printf("\r\nMensaje por 434 recibido.");
             break;
-        case MIWI_0868_RI_MASK:
-            riData = MIWI_0868;
-            break;
-        case MIWI_2400_RI_MASK:
-            riData = MIWI_2400;
+        default:
+            riData = riActual;
             break;
     }
             
@@ -116,6 +115,14 @@ BOOL Rcvd_Buffer1(RECEIVED_MESSAGE *Buffer)
         PrintChar(err);
         return FALSE;
     }
+    
+    for(i = 0; i < CONNECTION_SIZE; i++){
+        if(isSameAddress(Buffer->SourceAddress, ConnectionTable[i].Address)){
+            NumMssgIntercambiados[i]++;
+            break;
+        }
+    }
+    
     for (i = 0; GetPayloadToRead(riData) > 0; i++) {
         BYTE * storeItHere = &(Buffer->Payload[i]);
         err = GetRXData(riData, storeItHere);
