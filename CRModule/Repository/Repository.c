@@ -109,6 +109,9 @@ BOOL CRM_Repo_Store(REPO_MSSG_RCVD *Peticion)
         case (RstRTx):
             CRM_Repo_Reiniciar_RTx();
             break;
+        case (AddCoord):
+            CRM_Repo_Calculo_Coordenadas();
+            break;
         default:
             break;
     }
@@ -519,66 +522,6 @@ void CRM_Repo_Str_RSSI(radioInterface ri){
             break;             
     }
 }
-/*
-BYTE* CRM_Repo_Get_RSSI(radioInterface ri, BYTE position, BYTE *RSSI, BYTE *channel){
-    BYTE i, j, n, swap, swapCh;
-    BYTE array[MIWI2400NumChannels] = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
-    BYTE arrayCh[] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15};
-    switch(ri){
-        case MIWI_0868:
-            n = MIWI0868NumChannels;
-            for (i = 0; i < n; i++){
-                array[i] = MIWI868_RSSI_values[i];                
-            }
-            break;
-        case MIWI_2400:
-            n = MIWI2400NumChannels;
-            for (i = 0; i < n; i++){            
-                array[i] = MIWI2400_RSSI_values[i];              
-            }
-            break;             
-    }    
-    for (i = 0 ; i < ( n - 1 ); i++){
-        for (j = 0 ; j < n - i - 1; j++){
-            if (array[j] > array[j+1]){
-                swap         = array[j];
-                array[j]     = array[j+1];
-                array[j+1]   = swap;
-                swapCh       = arrayCh[j];
-                arrayCh[j]   = arrayCh[j+1];
-                arrayCh[j+1] = swapCh;                
-            }
-        }
-    }
-
-    switch(ri){
-        case MIWI_0868:
-            n = MIWI0868NumChannels;
-            for (i = 0; i < n; i++){
-                char trazaCanales[80];
-                sprintf(trazaCanales, "\r\nMIWI 868 Canal %d RSSI %d.\r\n", arrayCh[i], array[i]);
-                Printf(trazaCanales);                
-            }
-            break;
-        case MIWI_2400:
-            n = MIWI2400NumChannels;
-            for (i = 0; i < n; i++){            
-                char trazaCanales[80];
-                sprintf(trazaCanales, "\r\nMIWI 2400 Canal %d RSSI %d.\r\n", arrayCh[i], array[i]);
-                Printf(trazaCanales);              
-            }
-            break;             
-    }       
-    
-    
-    char trazaCanales[80];
-    sprintf(trazaCanales, "\r\nEl canal que se pide es el %d y su RSSI %d\r\n", arrayCh[position], array[position]);
-    Printf(trazaCanales);
-    
-    BYTE Respuesta[] = {arrayCh[position], array[position]};
-    return Respuesta;
-}
-*/
 //PRUEBA TEST5
 void CRM_Repo_ProbCambio(BYTE Valor)
 {
@@ -651,23 +594,27 @@ BOOL CRM_Repo_Reiniciar_RTx(void){
     #endif
 }
 
-BOOL CalculoCoordenadas(BYTE *RSSI){
-    
+BOOL CRM_Repo_Calculo_Coordenadas(){
+
+    BYTE dato;
+    BYTE *RSSI = &dato;
     MIWI_TICK TiempoActual;
     MIWI_TICK TiempoPaquete;
-    coord coordenadas;
-    if ( /*paquetesRecibidos == 0 && //Paquetes recibidos no. Comprobar que sea el primer paquete de un nodo.*/ GetRSSI(riActual,pRSSI) == 0x00 ){  //Si es correcto el valor de RSSI y es el primer dato de un nodo
+    TiempoActual = MiWi_TickGet();
+    if ( paquetesRecibidos == 0 && GetRSSI(riActual,RSSI) == 0x00 ){  //Si es correcto el valor de RSSI y es el primer dato de un nodo
         Printf("\r\nSe ha recibido el primer paquete\r\n");
         inicializarTablaAtacantes();
         TiempoPaquete = TiempoActual;
         TiempoAnterior = TiempoActual; //Para el tiempo del proximo paquete
         tiempoMax = TiempoPaquete;
         potenciaMax = *RSSI;
-        coordenadas.tiempo = TiempoPaquete;
-        coordenadas.RSSI = *RSSI;        
+
+        Lista_Paq_Rec_Aprendizaje[paquetesRecibidos].tiempo = TiempoPaquete;
+        Lista_Paq_Rec_Aprendizaje[paquetesRecibidos].RSSI = *RSSI;
+        paquetesRecibidos++;
         return TRUE;
     } else {
-        if ( paquetesRecibidos > 0 && GetRSSI(ri,RSSI) == 0x00){
+        if (paquetesRecibidos < MAX_PAQ_APRENDIZAJE && GetRSSI(riActual,RSSI) == 0x00){
             Printf("\r\nSe han recibido mas paquetes\r\n");
             TiempoActual = MiWi_TickGet();
             TiempoPaquete.Val = MiWi_TickGetDiff(TiempoActual, TiempoAnterior);
@@ -675,14 +622,13 @@ BOOL CalculoCoordenadas(BYTE *RSSI){
             if(*RSSI > potenciaMax) potenciaMax = *RSSI;
             TiempoAnterior = TiempoActual;
 
-            coordenadas.tiempo = TiempoPaquete;
-            coordenadas.RSSI = (double) *RSSI;
+            Lista_Paq_Rec_Aprendizaje[paquetesRecibidos].tiempo = TiempoPaquete;
+            Lista_Paq_Rec_Aprendizaje[paquetesRecibidos].RSSI = *RSSI;
+            paquetesRecibidos++;
             return TRUE;
-        } else {
-            coordenadas.RSSI = 0;
-            return FALSE;
         }
     }
+    return FALSE;
 }
 
 /*Funciones de inicializacion*/
@@ -705,7 +651,7 @@ BOOL CRM_Repo_Init(void)
 
     NumeroDePeticionesDeCambio = NumeroDePeticionesInicial;
 
-    TiempoAnterior.Val = 0;
+    TiempoAnterior = MiWi_TickGet();
     paquetesRecibidos = 0;
     /*Inicialización vector potencias*/
     /*

@@ -1572,6 +1572,22 @@ BOOL CRM_Optm_Int(void)
 #endif
             //TODO aqui deben ir las llamadas a las funciones que deba ejecutar el
             //optimizer.
+
+#ifdef DATACLUSTERING
+    if(GetPayloadToRead(riActual) != 0){
+        //Cada vez que entramos incluimos la potencia del paquete que hemos recibido y sumamos 1 al número de mensajes intercambiados con ese nodo.
+        //paquetesRecibidos++;MANDAR MENSAJE A REPO PARA SUMAR 1 A LOS PAQUETES RECIBIDOS.////////////////////////////////////////////////////////////////////////////////////////
+
+        REPO_MSSG_RCVD PeticionRepoInclCoord;
+        PeticionRepoInclCoord.Action = ActStr;
+        PeticionRepoInclCoord.DataType = AddCoord;
+
+        CRM_Message(NMM, SubM_Repo, &PeticionRepoInclCoord);
+    }
+#endif
+
+
+
 #if defined GAMETHEORY 
     if(flagPrimeraEjecucion == 0){                
         limpiaBufferRX();
@@ -1580,26 +1596,10 @@ BOOL CRM_Optm_Int(void)
         PrintChar(GetPayloadToRead(riActual));
     }
     
-/*    BYTE RI_MASK = WhichRIHasData();        
-    if(RI_MASK != 0){
-        //Cada vez que entramos incluimos la potencia del paquete que hemos recibido y sumamos 1 al número de mensajes intercambiados con ese nodo.
-        //paquetesRecibidos++;MANDAR MENSAJE A REPO PARA SUMAR 1 A LOS PAQUETES RECIBIDOS.////////////////////////////////////////////////////////////////////////////////////////
-
-        switch(RI_MASK){
-            case MIWI_0434_RI_MASK:
-                riData = MIWI_0434;
-                break;
-            case MIWI_0868_RI_MASK:
-                riData = MIWI_0868;
-                break;
-            case MIWI_2400_RI_MASK:
-                riData = MIWI_2400;
-                break;
-        }
-       
+    if(GetPayloadToRead(riActual)){
         BYTE Direccion[MY_ADDRESS_LENGTH];
         BYTE err;
-        err = GetRXSourceAddr(riData, Direccion);
+        err = GetRXSourceAddr(riActual, Direccion);
         if (err & 0x80) {
             Printf("\r\nError al obtener la direccion: ");
             PrintChar(err);
@@ -1613,8 +1613,8 @@ BOOL CRM_Optm_Int(void)
             CRM_Message(NMM, SubM_Repo, &PeticionRepoMssg);
         }
     }
-*/    
-    if (EstadoGT == Clear){
+       
+    if (EstadoGT == Clear){                        
         //Pedir a repo el numero de retransmisiones en el canal actual
         BYTE BackupCanal = GetOpChannel(riActual);
         REPO_MSSG_RCVD PeticionRepoRTx;

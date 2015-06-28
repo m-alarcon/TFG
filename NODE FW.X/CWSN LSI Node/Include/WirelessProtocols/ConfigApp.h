@@ -53,6 +53,7 @@
 //#define TEST5
 //#define TEST6
 #define GAMETHEORY
+#define DATACLUSTERING
 
 //----------------------------------------------------------------------------//
 //------ CONFIGURATION OF MIWI STACK AND MIWI TRANSCEIVERS FOR THE NODE ------//

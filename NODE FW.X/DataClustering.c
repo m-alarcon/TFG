@@ -81,9 +81,8 @@ void DataClustering(void){
     }
 }
 
-coord CalculoCoordenadas(){
+coord CalculoCoordenadas(radioInterface ri){
 
-    radioInterface ri = MIWI_2400;
     pRSSI = &RSSI;
     double t1;
     double tiempoPaquete;

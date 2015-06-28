@@ -46,7 +46,7 @@ typedef enum _REPACTION
 
 typedef enum _REPODATATYPE
 {
-    OwnNode = 0x01, NetNode, EnvNode, Enviro, EnvPotencias, IncluirPotencia, AddMsg, EnvRTx, EnvNMsg, EnvRSSI, SaveRSSI, RstRSSI, RstRTx, AllInfo = 0x10
+    OwnNode = 0x01, NetNode, EnvNode, Enviro, EnvPotencias, IncluirPotencia, AddMsg, EnvRTx, EnvNMsg, EnvRSSI, SaveRSSI, RstRSSI, RstRTx, AddCoord, AllInfo = 0x10
 } REPODATATYPE;
 
 /*Los sub-tipos de datos para cada tipo de dato*/
@@ -226,10 +226,10 @@ void CRM_Repo_NodosEnv(void);
 void CRM_Repo_Env(BYTE canal, BYTE InfoRSSI);
 void CRM_Repo_NRTx(BYTE n_rtx, BYTE canal, radioInterface ri);
 void CRM_Repo_Mensajes_Intercambiados(BYTE *Address);
-BYTE* CRM_Repo_Get_RSSI(radioInterface ri, BYTE position, BYTE *RSSI, BYTE *channel);
 void CRM_Repo_Str_RSSI(radioInterface ri);
 BOOL CRM_Repo_Reiniciar_Potencias(void);
 BOOL CRM_Repo_Reiniciar_RTx(void);
+BOOL CRM_Repo_Calculo_Coordenadas();
 /*Fin de funciones de I/O de datos*/
 
 /*Funciones de inicializacion*/
