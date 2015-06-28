@@ -1574,10 +1574,8 @@ BOOL CRM_Optm_Int(void)
             //optimizer.
 
 #ifdef DATACLUSTERING
+    //Esto lo tiene que hacer hasta que se termine el tiempo de aprendizaje
     if(GetPayloadToRead(riActual) != 0){
-        //Cada vez que entramos incluimos la potencia del paquete que hemos recibido y sumamos 1 al número de mensajes intercambiados con ese nodo.
-        //paquetesRecibidos++;MANDAR MENSAJE A REPO PARA SUMAR 1 A LOS PAQUETES RECIBIDOS.////////////////////////////////////////////////////////////////////////////////////////
-
         REPO_MSSG_RCVD PeticionRepoInclCoord;
         PeticionRepoInclCoord.Action = ActStr;
         PeticionRepoInclCoord.DataType = AddCoord;
