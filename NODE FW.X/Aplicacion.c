@@ -92,13 +92,19 @@ void limpiaBufferRX(void){
 BOOL Rcvd_Buffer1(RECEIVED_MESSAGE *Buffer)
 {
     BYTE i, err;
+    
     if (!GetPayloadToRead(MIWI_0434) && !GetPayloadToRead(riActual)) {
         return FALSE;
     }
     
-    if(!GetPayloadToRead(MIWI_0434)){
+    if(!GetPayloadToRead(riActual) && GetPayloadToRead(MIWI_0434)){
+        riData = MIWI_0434;
+    } else if(!GetPayloadToRead(MIWI_0434) && GetPayloadToRead(riActual)){
         riData = riActual;
-    } else if(!GetPayloadToRead(riActual)){
+        if(MSSG_PROC_OPTM == 0 && CHNG_MSSG_RCVD == 0){
+            return FALSE;
+        }
+    } else if(GetPayloadToRead(riActual) && GetPayloadToRead(MIWI_0434)){
         riData = MIWI_0434;
     } else {
         return FALSE;
@@ -112,13 +118,6 @@ BOOL Rcvd_Buffer1(RECEIVED_MESSAGE *Buffer)
         return FALSE;
     }
     
-    for(i = 0; i < CONNECTION_SIZE; i++){
-        if(isSameAddress(Buffer->SourceAddress, ConnectionTable[i].Address)){
-            NumMssgIntercambiados[i]++;
-            break;
-        }
-    }
-    
     for (i = 0; GetPayloadToRead(riData) > 0; i++) {
         BYTE * storeItHere = &(Buffer->Payload[i]);
         err = GetRXData(riData, storeItHere);
@@ -128,7 +127,7 @@ BOOL Rcvd_Buffer1(RECEIVED_MESSAGE *Buffer)
             return FALSE;
         }
     }
-    Buffer->PayloadSize = i;
+    Buffer->PayloadSize = i;    
     return TRUE;
 }
 
@@ -184,4 +183,5 @@ void Recibir_info(void){
             }
         }
         RecibiendoMssg = FALSE;
+        MSSG_PROC_OPTM = 0;
 }

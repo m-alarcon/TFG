@@ -36,16 +36,9 @@
 BYTE NumeroDePeticionesDeCambio;
 extern radioInterface riActual;
 MIWI_TICK TiempoAnterior;
-BYTE *pRSSI;
-BYTE RSSI = 0;
 double initRad = 0.3;
-MIWI_TICK tiempoMax;
+double tiempoMax;
 double potenciaMax;
-int aprendizaje = 0;
-int normalizado = 0;
-int clustersDone = 0;
-BYTE *pAttackerAddr;
-BYTE nDetectado = 0;
 int paquetesRecibidos;
 
 int nClusters = 0;
@@ -111,6 +104,18 @@ BOOL CRM_Repo_Store(REPO_MSSG_RCVD *Peticion)
             break;
         case (AddCoord):
             CRM_Repo_Calculo_Coordenadas();
+            break;
+        case (NormCoord):
+            CRM_Repo_Normalizar_Coordenadas();
+            break;
+        case (InclClusters):            
+            CRM_Repo_Calculo_Clusters();
+            break;            
+        case (DetAttNodoPropio):
+            CRM_Optm_Detectar_Atacante();
+            break;
+        case (DetAtt):
+            CRM_Repo_Proc_Mens_Att(Peticion);
             break;
         default:
             break;
@@ -606,10 +611,10 @@ BOOL CRM_Repo_Calculo_Coordenadas(){
         inicializarTablaAtacantes();
         TiempoPaquete = TiempoActual;
         TiempoAnterior = TiempoActual; //Para el tiempo del proximo paquete
-        tiempoMax = TiempoPaquete;
+        tiempoMax = (double) TiempoPaquete.Val;
         potenciaMax = *RSSI;
 
-        Lista_Paq_Rec_Aprendizaje[paquetesRecibidos].tiempo = TiempoPaquete;
+        Lista_Paq_Rec_Aprendizaje[paquetesRecibidos].tiempo = (double) TiempoPaquete.Val;
         Lista_Paq_Rec_Aprendizaje[paquetesRecibidos].RSSI = *RSSI;
         paquetesRecibidos++;
         return TRUE;
@@ -618,17 +623,215 @@ BOOL CRM_Repo_Calculo_Coordenadas(){
             Printf("\r\nSe han recibido mas paquetes\r\n");
             TiempoActual = MiWi_TickGet();
             TiempoPaquete.Val = MiWi_TickGetDiff(TiempoActual, TiempoAnterior);
-            if(TiempoPaquete.Val > tiempoMax.Val) tiempoMax = TiempoPaquete;
+            if((double) TiempoPaquete.Val > tiempoMax) tiempoMax = (double) TiempoPaquete.Val;
             if(*RSSI > potenciaMax) potenciaMax = *RSSI;
             TiempoAnterior = TiempoActual;
 
-            Lista_Paq_Rec_Aprendizaje[paquetesRecibidos].tiempo = TiempoPaquete;
+            Lista_Paq_Rec_Aprendizaje[paquetesRecibidos].tiempo = (double) TiempoPaquete.Val;
             Lista_Paq_Rec_Aprendizaje[paquetesRecibidos].RSSI = *RSSI;
             paquetesRecibidos++;
             return TRUE;
         }
     }
     return FALSE;
+}
+
+void CRM_Repo_Normalizar_Coordenadas(){
+     if(nClusters == 0){
+        int i;
+        for(i = 0; i < paquetesRecibidos; i++){
+            Lista_Paq_Rec_Aprendizaje[i].RSSI = Lista_Paq_Rec_Aprendizaje[i].RSSI/potenciaMax;
+            Lista_Paq_Rec_Aprendizaje[i].tiempo = Lista_Paq_Rec_Aprendizaje[i].tiempo/tiempoMax;
+        }
+    }
+}
+
+void CRM_Repo_Calculo_Clusters(){
+
+    int i,j;
+    for(i = 0; i < paquetesRecibidos; i++){
+        if(nClusters == 0){
+            Lista_Clusters[0].centro = Lista_Paq_Rec_Aprendizaje[0];
+            Lista_Clusters[0].radio = initRad;
+            Lista_Clusters[0].nMuestras = 1;
+            nClusters++;
+        } else {
+            int clusterActualizado = 0;
+            for(j = 0; j < nClusters; j++){
+                double distancia = CRM_Repo_Calculo_Distancia(Lista_Clusters[j].centro,Lista_Paq_Rec_Aprendizaje[i]);
+                if (distancia <= Lista_Clusters[j].radio){
+                    Lista_Clusters[j].radio += distancia;
+                    Lista_Clusters[j].centro.RSSI = ((Lista_Clusters[j].centro.RSSI * Lista_Clusters[j].nMuestras) + Lista_Paq_Rec_Aprendizaje[i].RSSI)/(Lista_Clusters[j].nMuestras + 1);
+                    Lista_Clusters[j].centro.tiempo = ((Lista_Clusters[j].centro.tiempo * Lista_Clusters[j].nMuestras) + Lista_Paq_Rec_Aprendizaje[i].tiempo)/(Lista_Clusters[j].nMuestras + 1);
+                    Lista_Clusters[j].nMuestras++;
+                    clusterActualizado = 1;
+                }
+            }
+            if (clusterActualizado == 0) {
+                Lista_Clusters[nClusters].centro = Lista_Paq_Rec_Aprendizaje[i];
+                Lista_Clusters[nClusters].radio = initRad;
+                Lista_Clusters[nClusters].nMuestras = 1;
+                nClusters++;
+            }
+        }
+    }    
+}
+
+double CRM_Repo_Calculo_Distancia(coord pto1, coord pto2){
+    double distancia;
+    double pto1Pr = pto1.RSSI;
+    double pto1t = pto1.tiempo;
+    double pto2Pr = pto2.RSSI;
+    double pto2t = pto2.tiempo;
+    distancia = sqrt (pow(pto2Pr-pto1Pr, 2) + pow(pto2t-pto1t, 2));
+    return distancia;
+}
+
+BOOL CRM_Optm_Detectar_Atacante(){
+    BYTE RSSI;
+    BYTE *pRSSI = &RSSI;
+    BYTE *attacker;
+    BYTE txAddr = 0;
+    BYTE nDetectado = 0;
+    attacker = &txAddr;
+    MIWI_TICK TiempoActual;
+    MIWI_TICK TiempoPaquete;
+    coord paquete;
+    BYTE i, inclCluster, j;
+    inclCluster = 0;
+    if ( GetRSSI(riActual,pRSSI) == 0x00 ){  //Se ha recibido un paquete
+        Printf("\r\nSe ha recibido un paquete\r\n");
+        TiempoActual = MiWi_TickGet();
+        TiempoPaquete.Val = MiWi_TickGetDiff(TiempoActual, TiempoAnterior);
+        TiempoAnterior = TiempoActual;        
+
+        if (TiempoPaquete.Val > 0){ //Se van a descartar los paquetes que se reciban cuando desborde el contador.
+            paquete.tiempo = (double) TiempoPaquete.Val/tiempoMax;
+            paquete.RSSI = (double) *pRSSI/potenciaMax;
+
+            //Recorrer el array de clusters y comprobar si el paquete pertenece a algun cluster
+            for(i = 0; i < nClusters; i++){
+                double distancia = CRM_Repo_Calculo_Distancia(Lista_Clusters[i].centro,paquete);
+                if (distancia < Lista_Clusters[i].radio && inclCluster == 0){
+                    inclCluster = 1;
+                    break;
+                }
+            }
+
+            if (inclCluster == 0) {
+                Printf("\r\nSe ha detectado atacante.");
+                GetRXSourceAddr(riActual, attacker);
+                //Añado en la tabla de atacantes al que he detectado
+                BYTE dirAtt[MY_ADDRESS_LENGTH], dirDet[MY_ADDRESS_LENGTH], a;
+                for (i = 0; i < MY_ADDRESS_LENGTH; i++){
+                    dirAtt[i] = *(attacker + i);
+                    dirDet[i] = GetMyLongAddress(i);
+                }
+                for (i = 0; i < (CONNECTION_SIZE+1)*(CONNECTION_SIZE+1); i++){
+                    if (isSameAddress(Tabla_Atacantes[i].direccionAtacante, dirAtt) && Tabla_Atacantes[i].esAtacante == 1){
+                        nDetectado++;
+                    }
+                    if (isSameAddress(Tabla_Atacantes[i].direccionAtacante, dirAtt) && isSameAddress(Tabla_Atacantes[i].direccionDetector, dirDet)){
+                        if(Tabla_Atacantes[i].esAtacante == 1){
+                            Printf("\r\nYa habia detectado a ese como atacante.");
+                            return FALSE;
+                        }
+                        a = i;
+                    }
+                }
+                
+                if (nDetectado >= 1){
+                    Printf("\r\nVarios nodos han detectado al mismo atacante. Se desconecta de la red.");
+                    //Se desconecta a ese de la red.
+                    //Se puede hacer cualquier otra cosa.
+                    MiApp_RemoveConnection(a,ISM_434);
+                    MiApp_RemoveConnection(a,ISM_868);
+                    MiApp_RemoveConnection(a,ISM_2G4);
+                }
+                //Guardo en la tabla quién es el atacante
+                Tabla_Atacantes[a].esAtacante = 1;
+                
+                //Mando un mensaje por VCC al resto de nodos con la informacion del atacante.
+                BYTE MensajeVCC[] = {VccCtrlMssg, SubM_Repo, ActStr, DetAtt, 0, dirAtt[0], dirAtt[1], 
+                                    dirAtt[2], dirAtt[3], dirAtt[4], dirAtt[5], dirAtt[6], dirAtt[7], 
+                                    dirDet[0], dirDet[1], dirDet[2], dirDet[3], dirDet[4], dirDet[5], 
+                                    dirDet[6], dirDet[7], riActual};
+                MSN_MSSG_RCVD PeticionAtacante;
+                VCC_MSSG_RCVD PeticionVCCAtacante;
+
+                PeticionVCCAtacante.AddrMode = BROADCAST_ADDRMODE;
+                PeticionVCCAtacante.Action = ActSend;
+                PeticionVCCAtacante.BufferVCC = MensajeVCC;
+                PeticionVCCAtacante.Transceiver = MIWI_0434;
+                BYTE sizeBufferVCC = 22;
+                PeticionVCCAtacante.Param1 = &sizeBufferVCC;
+
+                PeticionAtacante.Peticion_Destino.PeticionVCC = &PeticionVCCAtacante;
+
+                CRM_Message(VCC, SubM_Ext, &PeticionAtacante);
+                
+                return TRUE;
+            } else {
+                return FALSE;
+            }
+        }
+    }
+    return FALSE;
+}
+
+BOOL CRM_Repo_Proc_Mens_Att(REPO_MSSG_RCVD *Peticion){
+    Printf("\r\nRecibido mensaje de atacante.");
+    BYTE dirAtt[MY_ADDRESS_LENGTH], dirDet[MY_ADDRESS_LENGTH], i, a;
+    BYTE nDetectado = 0;
+    for(i = 0; i < MY_ADDRESS_LENGTH; i++){
+        dirAtt[i] = *(BYTE*)(Peticion->Param2 + i);
+    }
+    for(i = 0; i < MY_ADDRESS_LENGTH; i++){
+        dirDet[i] = *(BYTE*)(Peticion->Param2 + i + MY_ADDRESS_LENGTH);
+    }
+    for (i = 0; i < (CONNECTION_SIZE+1)*(CONNECTION_SIZE+1); i++){
+        if (isSameAddress(Tabla_Atacantes[i].direccionAtacante, dirAtt) && Tabla_Atacantes[i].esAtacante == 1){
+            nDetectado++;
+        }
+        if (isSameAddress(Tabla_Atacantes[i].direccionAtacante, dirAtt) && isSameAddress(Tabla_Atacantes[i].direccionDetector, dirDet)){
+            if(Tabla_Atacantes[i].esAtacante == 1){
+                Printf("\r\nYa habia recibido ese mensaje.");
+                return FALSE;
+            }
+            a = i;
+        }
+    }
+
+    if (nDetectado >= 2){
+        Printf("\r\nVarios nodos han detectado al mismo atacante. Se desconecta de la red.");
+        //Se desconecta a ese de la red.
+        //Se puede hacer cualquier otra cosa.
+        MiApp_RemoveConnection(a,ISM_434);
+        MiApp_RemoveConnection(a,ISM_868);
+        MiApp_RemoveConnection(a,ISM_2G4);
+    }
+    //Guardo en la tabla quién es el atacante
+    Tabla_Atacantes[a].esAtacante = 1;
+    
+    //Mando un mensaje por VCC al resto de nodos con la informacion del atacante.
+    Printf("\r\nMando información del atacante y el detector al resto de nodos.");
+    BYTE MensajeVCC[] = {VccCtrlMssg, SubM_Repo, ActStr, DetAtt, 0, dirAtt[0], dirAtt[1], 
+                        dirAtt[2], dirAtt[3], dirAtt[4], dirAtt[5], dirAtt[6], dirAtt[7], 
+                        dirDet[0], dirDet[1], dirDet[2], dirDet[3], dirDet[4], dirDet[5], 
+                        dirDet[6], dirDet[7], riActual};
+    MSN_MSSG_RCVD PeticionAtacante;
+    VCC_MSSG_RCVD PeticionVCCAtacante;
+
+    PeticionVCCAtacante.AddrMode = BROADCAST_ADDRMODE;
+    PeticionVCCAtacante.Action = ActSend;
+    PeticionVCCAtacante.BufferVCC = MensajeVCC;
+    PeticionVCCAtacante.Transceiver = MIWI_0434;
+    BYTE sizeBufferVCC = 22;
+    PeticionVCCAtacante.Param1 = &sizeBufferVCC;
+
+    PeticionAtacante.Peticion_Destino.PeticionVCC = &PeticionVCCAtacante;
+
+    CRM_Message(VCC, SubM_Ext, &PeticionAtacante);
 }
 
 /*Funciones de inicializacion*/

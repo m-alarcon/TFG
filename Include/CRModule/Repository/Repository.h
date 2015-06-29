@@ -31,6 +31,7 @@
 #include "../CRModule.h"
 //#include "WirelessProtocols/MCHP_API.h"
 #include "../../CWSN LSI Node/Include/NodeHAL.h"
+#include "math.h"
 
 #include "ConfigRepository.h"
 
@@ -46,7 +47,7 @@ typedef enum _REPACTION
 
 typedef enum _REPODATATYPE
 {
-    OwnNode = 0x01, NetNode, EnvNode, Enviro, EnvPotencias, IncluirPotencia, AddMsg, EnvRTx, EnvNMsg, EnvRSSI, SaveRSSI, RstRSSI, RstRTx, AddCoord, AllInfo = 0x10
+    OwnNode = 0x01, NetNode, EnvNode, Enviro, EnvPotencias, IncluirPotencia, AddMsg, EnvRTx, EnvNMsg, EnvRSSI, SaveRSSI, RstRSSI, RstRTx, AddCoord, NormCoord, InclClusters, DetAttNodoPropio, DetAtt, AllInfo = 0x10
 } REPODATATYPE;
 
 /*Los sub-tipos de datos para cada tipo de dato*/
@@ -98,7 +99,7 @@ typedef struct _REPO_MSSG_RCVD
 
 typedef struct coordenadas {
     double RSSI;
-    MIWI_TICK tiempo;
+    double tiempo;
 } coord;
 
 typedef struct cluster {
@@ -230,6 +231,11 @@ void CRM_Repo_Str_RSSI(radioInterface ri);
 BOOL CRM_Repo_Reiniciar_Potencias(void);
 BOOL CRM_Repo_Reiniciar_RTx(void);
 BOOL CRM_Repo_Calculo_Coordenadas();
+void CRM_Repo_Normalizar_Coordenadas();
+void CRM_Repo_Calculo_Clusters();
+double CRM_Repo_Calculo_Distancia(coord pto1, coord pto2);
+BOOL CRM_Optm_Detectar_Atacante();
+BOOL CRM_Repo_Proc_Mens_Att(REPO_MSSG_RCVD *Peticion);
 /*Fin de funciones de I/O de datos*/
 
 /*Funciones de inicializacion*/

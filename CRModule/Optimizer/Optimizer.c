@@ -38,6 +38,10 @@ WORD Cuentamseg; //Para la cuenta de los mseg que han pasado.
 WORD mseg;  //Para la interrupcion del timer 5.
 WORD Periodo;
 
+WORD tiempoCambio;
+WORD tiempoCambioPotTX;
+WORD tiempoCambioFrecPaquetes;
+
 extern BOOL EnviandoMssgApp;/*Para  la preuba de que mientras se envían datos
                              /*de appliacion no se puede realizar la estrategia
                              de optimizacion. Me refiero a justo en el momento
@@ -108,10 +112,12 @@ extern radioInterface riData;
     WORD CosteCambio, CosteOcupado, CosteNoCambio;
     
     //Data Clustering
-    double learningTimeMax = 30000;
+    double learningTimeMax = 600;
     double learningTime;
-    double reinicioAtacantesTimeMax = 20400000;
-    double reinicioAtacantesTime;
+    double reinicioAtacantesTimeMax = 6000;//Para reiniciar cada 5 minutos
+    BYTE aprendizaje;
+    BYTE normalizado;
+    BYTE clustersDone;
 
 /*****************************************************************************/
 /******************************FIN DE VARIABLES*******************************/
@@ -857,7 +863,7 @@ NOACEPTA: //Si no queremos notifcar el no cambio comentariamos y dejaríamos solo
                     }
                 }      
             }
-            break;            
+            break;
         default:
             break;
     }
@@ -1015,6 +1021,9 @@ BOOL CRM_Optm_Init(void)
     Periodomseg = PeriodoXDefecto;
     mseg = 0;
     Periodo = 1000;
+    tiempoCambio = 0;
+    tiempoCambioPotTX = 50000;
+    tiempoCambioFrecPaquetes = 60000;
     //TODO la inicializacion.
     //Ini de las estrategias de optimizacion.
     //La de coste de cambio de canal.
@@ -1029,8 +1038,12 @@ BOOL CRM_Optm_Init(void)
         primera = 0;
         flagPrimeraEjecucion = 0;
         inicioCambio = FALSE;
-        reinicioAtacantesTime = 0;
-        learningTime = 0;        
+        learningTime = 0;
+        aprendizaje = 0;
+        normalizado = 0;
+        clustersDone = 0;
+        MSSG_PROC_OPTM = 0;
+        
        // NumMsj = numMsjXDefecto; //Este es mi "espacio muestral" de los mensajes
             //que tengo en cuenta para realizar los calculos.
         MaxRTx = maxRTxXDefecto;
@@ -1574,27 +1587,65 @@ BOOL CRM_Optm_Int(void)
             //optimizer.
 
 #ifdef DATACLUSTERING
+    learningTime++;
+    if (learningTime == reinicioAtacantesTimeMax){
+        Printf("Se reinicia la tabla de atacantes\r\n");
+        inicializarTablaAtacantes();
+        learningTime = 0;
+    }
     //Esto lo tiene que hacer hasta que se termine el tiempo de aprendizaje
-    if(GetPayloadToRead(riActual) != 0){
+    if(GetPayloadToRead(riActual) != 0 && learningTime < learningTimeMax && MSSG_PROC_OPTM == 0){
+        if(!primera){
+            primera = 1;
+            learningTime = 0;
+        }
+        MSSG_PROC_OPTM = 1;
         REPO_MSSG_RCVD PeticionRepoInclCoord;
         PeticionRepoInclCoord.Action = ActStr;
         PeticionRepoInclCoord.DataType = AddCoord;
 
         CRM_Message(NMM, SubM_Repo, &PeticionRepoInclCoord);
+    } else if (learningTime == learningTimeMax){
+        aprendizaje = 1;
+    }
+            
+    if (aprendizaje == 1){
+        if(normalizado == 0) {
+            REPO_MSSG_RCVD PeticionRepoNorm;
+            PeticionRepoNorm.Action = ActStr;
+            PeticionRepoNorm.DataType = NormCoord;
+
+            CRM_Message(NMM, SubM_Repo, &PeticionRepoNorm);
+            normalizado = 1;
+        } else if (normalizado == 1 && clustersDone == 0) {
+            REPO_MSSG_RCVD PeticionRepoClusters;
+            PeticionRepoClusters.Action = ActStr;
+            PeticionRepoClusters.DataType = InclClusters;
+
+            CRM_Message(NMM, SubM_Repo, &PeticionRepoClusters);
+            clustersDone = 1;
+        } else {
+            if(GetPayloadToRead(riActual) != 0 && MSSG_PROC_OPTM == 0){
+                MSSG_PROC_OPTM = 1;
+                if (learningTime == 0xEFFFFFFF){
+                    learningTime = 0;
+                }
+                //Manda un mensaje a repo para que analice el paquete que se ha recibido
+                REPO_MSSG_RCVD PeticionRepoAtacante;
+                PeticionRepoAtacante.Action = ActStr;
+                PeticionRepoAtacante.DataType = DetAttNodoPropio;//CAMBIAR ESTO
+
+                CRM_Message(NMM, SubM_Repo, &PeticionRepoAtacante); 
+            }
+        }
     }
 #endif
 
 
 
 #if defined GAMETHEORY 
-    if(flagPrimeraEjecucion == 0){                
-        limpiaBufferRX();
-        flagPrimeraEjecucion = 1;
-        Printf("\r\nSe ha limpiado el buffer de recepcion.");
-        PrintChar(GetPayloadToRead(riActual));
-    }
-    
-    if(GetPayloadToRead(riActual)){
+    if(GetPayloadToRead(riActual) && MSSG_PROC_OPTM == 0){
+        MSSG_PROC_OPTM = 1;
         BYTE Direccion[MY_ADDRESS_LENGTH];
         BYTE err;
         err = GetRXSourceAddr(riActual, Direccion);
@@ -1630,13 +1681,14 @@ BOOL CRM_Optm_Int(void)
         PeticionRepoResetRTx.DataType = RstRTx;
         CRM_Message(NMM, SubM_Repo, &PeticionRepoResetRTx);
         if (inicioCambio){
+            MSSG_PROC_OPTM = 1;
             OPTM_MSSG_RCVD PeticionInicioCambio;
             PeticionInicioCambio.Action = SubActCambio;
             PeticionInicioCambio.Transceiver = riActual;
             CRM_Optm_Cons(&PeticionInicioCambio);
         }            
     }
-#endif
+#endif    
         }
 
     }
@@ -1644,39 +1696,13 @@ BOOL CRM_Optm_Int(void)
 }
 
 BOOL CRM_Timer5_Int(void)
-{
-    /*reinicioAtacantesTime++;
-    learningTime++;
-    //Printf("Se ha entrado en el ISR del timer 5\r\n");
-    if (learningTime == learningTimeMax){
-        if (paquetesRecibidos == 0){
-            learningTime = 0;
-        } else {
-            Printf("Se ha acabado el tiempo de aprendizaje\r\n");
-            aprendizaje = 1;
-        }
-    }
-
-    if (reinicioAtacantesTime == 0xEFFFFFFF){
-        reinicioAtacantesTime = 0;
-        Printf("\r\nTimer int");
-    }
-
-    if (learningTime == reinicioAtacantesTimeMax){
-        Printf("Se reinicia la tabla de atacantes\r\n");
-        //inicializarTablaAtacantes();
-        //Mandar mensaje a repo para que reinicie la tabla.
-        reinicioAtacantesTime = 0;
-    }*/
- 
-    //if(mseg==10)
-        
-    
+{    
+    BYTE delay = rand() % 100;//Si se quiere un tiempo fijo quitar rand y poner 0
     if(mseg<Periodo)
     {
         mseg++;
     }
-    else if(mseg==Periodo)
+    else if(mseg>=(Periodo+delay))
     {
         if(!EnviandoMssgApp && !RecibiendoMssg)
         {
@@ -1684,6 +1710,27 @@ BOOL CRM_Timer5_Int(void)
             Enviar_Paquete_Datos_App(riActual, LONG_MIWI_ADDRMODE, &EUINodoExt);
         }
     }
+    
+    #ifdef NODE_1    
+    if(tiempoCambio<tiempoCambioPotTX) {
+        tiempoCambio++;
+    } else if(tiempoCambio==tiempoCambioPotTX) {
+        SetTXPower(riActual, 0x80);
+        Printf("\r\nSe cambia la potencia de transmision.");
+        tiempoCambio = tiempoCambioPotTX+100;
+    }
+    #endif
+
+#ifdef NODE_2
+    if(tiempoCambio<tiempoCambioFrecPaquetes) {
+        tiempoCambio++;
+    } else if(tiempoCambio==tiempoCambioFrecPaquetes) {
+        Periodo = 500;
+        Printf("\r\nSe cambia el tiempo entre paquetes.");
+        tiempoCambio = tiempoCambioFrecPaquetes+100;
+    }
+#endif
+    
 }
 
 #if defined TEST3

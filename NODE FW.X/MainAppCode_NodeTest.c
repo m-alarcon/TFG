@@ -12,7 +12,7 @@
 
 #include "CWSN LSI Node/Include/NodeHAL.h"
 #include "CWSN LSI Node/Include/WirelessProtocols/Console.h"
-#include "DataClustering.h"    //Pruebas
+#include "Aplicacion.h"
     
 #if defined MIWI_2400_RI
 radioInterface ri3 = MIWI_2400;
@@ -1342,7 +1342,7 @@ CRMODULE_TEST:
 
 DC_TEST:   
     if(WhichRIHasData() != 0){
-        Recibir_info();  
+        Recibir_info();
     }
         //                        break;
     }

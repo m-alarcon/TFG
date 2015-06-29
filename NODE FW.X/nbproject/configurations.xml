@@ -131,8 +131,6 @@
       </logicalFolder>
       <itemPath>CWSN LSI Node/HardwareProfile.c</itemPath>
       <itemPath>CWSN LSI Node/NodeHAL.c</itemPath>
-      <itemPath>DataClustering.c</itemPath>
-      <itemPath>DataClustering.h</itemPath>
       <itemPath>Aplicacion.c</itemPath>
       <itemPath>Aplicacion.h</itemPath>
     </logicalFolder>
@@ -379,6 +377,7 @@
         <property key="UART5" value="true"/>
         <property key="UART6" value="true"/>
         <property key="debugoptions.useswbreakpoints" value="true"/>
+        <property key="firmware.download.all" value="false"/>
         <property key="hwtoolclock.frcindebug" value="false"/>
         <property key="memories.aux" value="false"/>
         <property key="memories.bootflash" value="false"/>

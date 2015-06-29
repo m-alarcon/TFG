@@ -81,56 +81,6 @@ void DataClustering(void){
     }
 }
 
-coord CalculoCoordenadas(radioInterface ri){
-
-    pRSSI = &RSSI;
-    double t1;
-    double tiempoPaquete;
-    coord coordenadas;
-    if ( paquetesRecibidos == 0 && GetRSSI(ri,pRSSI) == 0x00 ){  //Si es correcto el valor de RSSI y es el primer dato de un nodo
-        Printf("\r\nSe ha recibido el primer paquete\r\n");
-        inicializarTablaAtacantes();
-        tiempoPaquete = learningTime;
-        t0 = learningTime; //Para el tiempo del proximo paquete
-        tiempoMax = tiempoPaquete;
-        potenciaMax = *pRSSI;
-        coordenadas.tiempo = tiempoPaquete;
-        coordenadas.RSSI = *pRSSI;
-        limpiaBufferRX();
-        return coordenadas;
-    } else {
-        if ( paquetesRecibidos > 0 && GetRSSI(ri,pRSSI) == 0x00){
-            Printf("\r\nSe han recibido mas paquetes\r\n");
-            t1 = learningTime;
-            tiempoPaquete = t1 - t0;
-            if(tiempoPaquete > tiempoMax) tiempoMax = tiempoPaquete;
-            if(*pRSSI > potenciaMax) potenciaMax = *pRSSI;
-            t0 = t1;
-
-            coordenadas.tiempo = tiempoPaquete;
-            coordenadas.RSSI = (double) *pRSSI;
-            limpiaBufferRX();
-            return coordenadas;
-        } else {
-            coordenadas.RSSI = 0;
-            return coordenadas;
-        }
-    }
-}
-
-void NormalizarCoordenadas(){
-     if(nClusters == 0){
-        int i;
-        for(i = 0; i < paquetesRecibidos; i++){
-            Lista_Paq_Rec_Aprendizaje[i].RSSI = Lista_Paq_Rec_Aprendizaje[i].RSSI/potenciaMax;
-            Lista_Paq_Rec_Aprendizaje[i].tiempo = Lista_Paq_Rec_Aprendizaje[i].tiempo/tiempoMax;
-        }
-        normalizado = 1;
-    }
-}
-
-
-
 void inicializarTablaAtacantes(){
     BYTE i,j,k;
     BYTE TablaDirecciones[CONNECTION_SIZE+1][MY_ADDRESS_LENGTH];

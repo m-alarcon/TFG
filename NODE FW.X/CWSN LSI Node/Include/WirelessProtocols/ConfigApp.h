@@ -52,7 +52,7 @@
 //#define TEST4
 //#define TEST5
 //#define TEST6
-#define GAMETHEORY
+//#define GAMETHEORY
 #define DATACLUSTERING
 
 //----------------------------------------------------------------------------//
