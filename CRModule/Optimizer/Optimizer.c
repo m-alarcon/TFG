@@ -112,9 +112,9 @@ extern radioInterface riData;
     WORD CosteCambio, CosteOcupado, CosteNoCambio;
     
     //Data Clustering
-    double learningTimeMax = 600;
+    double learningTimeMax;
     double learningTime;
-    double reinicioAtacantesTimeMax = 6000;//Para reiniciar cada 5 minutos
+    double reinicioAtacantesTimeMax;//Para reiniciar cada 5 minutos
     BYTE aprendizaje;
     BYTE normalizado;
     BYTE clustersDone;
@@ -479,7 +479,9 @@ NOACEPTA: //Si no queremos notifcar el no cambio comentariamos y dejaríamos solo
                     double porcentaje = ((nMensIntercambiados/MensajesTotales)*100);
                     PrintChar(porcentaje); 
                     
-                    if(porcentaje >= 10){//Si el numero de mensajes que me intercambio con este es muy grande no me cambio
+                    
+                    
+                    if(porcentaje >= PorcentajeMinimo){//Si el numero de mensajes que me intercambio con este es muy grande no me cambio
                         Printf("\r\nUn nodo con el que me comunico mucho no quiere cambiar.");
                         Printf("\r\nNotifico al resto de nodos que no quiero cambiar.");
                         MSN_MSSG_RCVD PeticionCambioCanal;
@@ -1024,6 +1026,8 @@ BOOL CRM_Optm_Init(void)
     tiempoCambio = 0;
     tiempoCambioPotTX = 50000;
     tiempoCambioFrecPaquetes = 60000;
+    learningTimeMax = AprendizajeMax;
+    reinicioAtacantesTimeMax = ReinicioMax;
     //TODO la inicializacion.
     //Ini de las estrategias de optimizacion.
     //La de coste de cambio de canal.
