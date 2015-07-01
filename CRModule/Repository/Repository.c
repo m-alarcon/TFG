@@ -112,7 +112,7 @@ BOOL CRM_Repo_Store(REPO_MSSG_RCVD *Peticion)
             CRM_Repo_Calculo_Clusters();
             break;            
         case (DetAttNodoPropio):
-            CRM_Optm_Detectar_Atacante();
+            CRM_Repo_Detectar_Atacante();
             break;
         case (DetAtt):
             CRM_Repo_Proc_Mens_Att(Peticion);
@@ -687,7 +687,7 @@ double CRM_Repo_Calculo_Distancia(coord pto1, coord pto2){
     return distancia;
 }
 
-BOOL CRM_Optm_Detectar_Atacante(){
+BOOL CRM_Repo_Detectar_Atacante(){
     BYTE RSSI;
     BYTE *pRSSI = &RSSI;
     BYTE *attacker;
@@ -697,7 +697,7 @@ BOOL CRM_Optm_Detectar_Atacante(){
     MIWI_TICK TiempoActual;
     MIWI_TICK TiempoPaquete;
     coord paquete;
-    BYTE i, inclCluster, j;
+    BYTE i, inclCluster;
     inclCluster = 0;
     if ( GetRSSI(riActual,pRSSI) == 0x00 ){  //Se ha recibido un paquete
         Printf("\r\nSe ha recibido un paquete\r\n");
@@ -802,7 +802,7 @@ BOOL CRM_Repo_Proc_Mens_Att(REPO_MSSG_RCVD *Peticion){
         }
     }
 
-    if (nDetectado >= 2){
+    if (nDetectado >= 1){
         Printf("\r\nVarios nodos han detectado al mismo atacante. Se desconecta de la red.");
         //Se desconecta a ese de la red.
         //Se puede hacer cualquier otra cosa.

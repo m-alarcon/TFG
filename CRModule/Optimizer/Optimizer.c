@@ -1719,9 +1719,9 @@ BOOL CRM_Timer5_Int(void)
     if(tiempoCambio<tiempoCambioPotTX) {
         tiempoCambio++;
     } else if(tiempoCambio==tiempoCambioPotTX) {
-        SetTXPower(riActual, 0x80);
+        SetTXPower(riActual, 0xFF);
         Printf("\r\nSe cambia la potencia de transmision.");
-        tiempoCambio = tiempoCambioPotTX+100;
+        tiempoCambio = tiempoCambioPotTX+100; //Para que no siga sumando ni cambiando la potencia
     }
     #endif
 

@@ -234,7 +234,7 @@ BOOL CRM_Repo_Calculo_Coordenadas();
 void CRM_Repo_Normalizar_Coordenadas();
 void CRM_Repo_Calculo_Clusters();
 double CRM_Repo_Calculo_Distancia(coord pto1, coord pto2);
-BOOL CRM_Optm_Detectar_Atacante();
+BOOL CRM_Repo_Detectar_Atacante();
 BOOL CRM_Repo_Proc_Mens_Att(REPO_MSSG_RCVD *Peticion);
 /*Fin de funciones de I/O de datos*/
 
