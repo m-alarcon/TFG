@@ -89,7 +89,7 @@ void limpiaBufferRX(void){
     }
 }
 
-BOOL Rcvd_Buffer1(RECEIVED_MESSAGE *Buffer)
+BOOL Proc_Buff(RECEIVED_MESSAGE *Buffer)
 {
     BYTE i, err;
     
@@ -140,7 +140,7 @@ void Recibir_info(void){
     
     RecibiendoMssg = TRUE;
         
-        if(Rcvd_Buffer1(&AppRXBuffer))
+        if(Proc_Buff(&AppRXBuffer))
         {
             RecibiendoMssg = FALSE;
             CabeceraRxMssg = (VCCMSSGTYPE)(AppRXBuffer.Payload[CtrlMssgField]);
