@@ -113,7 +113,7 @@
         #define PrintDec(a)
     #endif
 #else
-    #error Unknown processor.  See Compiler.h
+    //#error Unknown processor.  See Compiler.h
 #endif
 
 #define Printf(x) ConsolePutROMString((ROM char*)x)

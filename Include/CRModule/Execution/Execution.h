@@ -42,7 +42,7 @@
 
 typedef enum _EXECACTION
 {
-    ActSleepMCU = 0x01, ActResetMCU, ActChnHop, ActTxPwr, ActTurnOn, ActSleep, ActWake, ActTurnOff
+    ActSleepMCU = 0x01, ActResetMCU, ActChnHop, ActTxPwr, ActTurnOn, ActSleep, ActWake, ActTurnOff, ActDisconn
 } EXECACTION;//quito ActReset y pongo ActTurnOn
 
 /*La estructura de los parametros del Mensaje con destino este modulo.*/

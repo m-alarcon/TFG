@@ -1524,13 +1524,13 @@
         void _ISRFAST __attribute__((interrupt, auto_psv)) _INT1Interrupt(void)
     #elif defined(__PIC32MX__)
         #if defined MRF24J40_USES_INT1
-            void __ISR(_EXTERNAL_1_VECTOR, ipl4) _INT1Interrupt(void)
+            void __ISR(_EXTERNAL_1_VECTOR, ipl4AUTO) _INT1Interrupt(void)
         #elif defined MRF24J40_USES_INT2
-            void __ISR(_EXTERNAL_2_VECTOR, ipl4) _INT2Interrupt(void)
+            void __ISR(_EXTERNAL_2_VECTOR, ipl4AUTO) _INT2Interrupt(void)
         #elif defined MRF24J40_USES_INT3
-            void __ISR(_EXTERNAL_3_VECTOR, ipl4) _INT3Interrupt(void)
+            void __ISR(_EXTERNAL_3_VECTOR, ipl4AUTO) _INT3Interrupt(void)
         #elif defined MRF24J40_USES_INT4
-            void __ISR(_EXTERNAL_4_VECTOR, ipl4) _INT4Interrupt(void)
+            void __ISR(_EXTERNAL_4_VECTOR, ipl4AUTO) _INT4Interrupt(void)
         #endif
     #else
         void _ISRFAST _INT3Interrupt(void)

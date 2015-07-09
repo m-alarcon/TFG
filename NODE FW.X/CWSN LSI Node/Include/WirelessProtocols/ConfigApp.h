@@ -40,7 +40,8 @@
 //----------------------------------------------------------------------------//
 //Select only one of these...
 //#define NODE_1      //TX role in App. code - node 1. Sets EUI_testA address.
-#define NODE_2      //RX role in App. code - node 2. Sets EUI_testB address.
+//#define NODE_2      //RX role in App. code - node 2. Sets EUI_testB address.
+#define NODE_3
 //#define NODE_NOP    //Dummy role - It only joins the network at the beginning
                     //and does stacks maintenance tasks. Sets EUI_testC address.
     //#define NOP_JOINS_AND_LEAVES_LOOP     //Provisional, debugging!
@@ -135,6 +136,8 @@
             #define EUI_7 0x11      //CWSN-LSI, EUI_testA
         #elif defined NODE_2
             #define EUI_7 0x22      //CWSN-LSI, EUI_testB
+        #elif defined NODE_3
+            #define EUI_7 0x33
         #elif defined NODE_NOP
             #define EUI_7 0xFF      //CWSN-LSI, EUI_testC
         #else

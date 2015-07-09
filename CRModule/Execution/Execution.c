@@ -62,6 +62,9 @@ BOOL CRM_Exec_Mssg_Rcvd(EXEC_MSSG_RCVD *Peticion)
         case(ActTurnOff):
             CRM_Exec_TurnOff(Peticion);
             break;
+        case(ActDisconn):
+            CRM_Exec_DisconNode(Peticion);
+            break;
         default:
             break;
     }
@@ -151,6 +154,13 @@ BOOL CRM_Exec_TurnOn(EXEC_MSSG_RCVD *Peticion)
     } else {
         return FALSE;
     }
+}
+
+BOOL CRM_Exec_DisconNode(EXEC_MSSG_RCVD *Peticion)
+{
+        MiApp_RemoveConnection(Peticion->Param1,ISM_434);
+        MiApp_RemoveConnection(Peticion->Param1,ISM_868);
+        MiApp_RemoveConnection(Peticion->Param1,ISM_2G4);
 }
 /*Fin de funciones de funcionalidad propia del sub-modulo*/
 

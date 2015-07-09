@@ -4656,7 +4656,7 @@ static BYTE SendMIWI(miwi_band mb, BOOL isBroadcast, BYTE *Address, BOOL isLongA
 //INTERRUPTION SERVICE ROUTINES ////////////////////////////////////////////////
 #ifdef __PIC32MX__
 ////////////////////////////////////////////////////////////////////////////////
-    void __ISR(_TIMER_1_VECTOR, ipl1) _TMR1_Interrupt_ISR(void){
+    void __ISR(_TIMER_1_VECTOR, ipl1AUTO) _TMR1_Interrupt_ISR(void){
       //  coreTMRvals[0] = ReadCoreTimer();
         WDTCONCLR = 0x8000;         //Disable WDT, just in case...
         mT1ClearIntFlag();

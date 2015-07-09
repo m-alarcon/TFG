@@ -550,12 +550,19 @@ void InitCRModule(void){
     PeticionCrearEntrada.Action = ActAddEntry;
     #if defined NODE_1
         //BYTE EUI_Permiso[] = {0x01, EUI_1, EUI_2, EUI_3, EUI_4, EUI_5, EUI_6, EUI_7};
-        BYTE EUI_Permiso[] = {EUI_0, EUI_1, EUI_2, EUI_3, EUI_4, EUI_5, EUI_6, 0x22};
+        BYTE EUI_Permiso1[] = {EUI_0, EUI_1, EUI_2, EUI_3, EUI_4, EUI_5, EUI_6, 0x22};
+        BYTE EUI_Permiso2[] = {EUI_0, EUI_1, EUI_2, EUI_3, EUI_4, EUI_5, EUI_6, 0x33};
     #elif defined NODE_2
         //BYTE EUI_Permiso[] = {0x05, EUI_1, EUI_2, EUI_3, EUI_4, EUI_5, EUI_6, EUI_7};
-        BYTE EUI_Permiso[] = {EUI_0, EUI_1, EUI_2, EUI_3, EUI_4, EUI_5, EUI_6, 0x11};
+        BYTE EUI_Permiso1[] = {EUI_0, EUI_1, EUI_2, EUI_3, EUI_4, EUI_5, EUI_6, 0x11};
+        BYTE EUI_Permiso2[] = {EUI_0, EUI_1, EUI_2, EUI_3, EUI_4, EUI_5, EUI_6, 0x33};
+    #elif defined NODE_3
+        BYTE EUI_Permiso1[] = {EUI_0, EUI_1, EUI_2, EUI_3, EUI_4, EUI_5, EUI_6, 0x11};
+        BYTE EUI_Permiso2[] = {EUI_0, EUI_1, EUI_2, EUI_3, EUI_4, EUI_5, EUI_6, 0x22};
     #endif
-    PeticionCrearEntrada.DirecOrigen = EUI_Permiso;
+    PeticionCrearEntrada.DirecOrigen = EUI_Permiso1;
+    CRM_Message(NMM, SubM_AccCtrl, &PeticionCrearEntrada);
+    PeticionCrearEntrada.DirecOrigen = EUI_Permiso2;
     CRM_Message(NMM, SubM_AccCtrl, &PeticionCrearEntrada);
     //Fin de la creacion de entrada de la tabal de permisos.
     NodoCerrado = FALSE; //Para que pueda aceptar peticiones de acciones de otros nodos.
