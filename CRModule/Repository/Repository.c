@@ -35,8 +35,6 @@
 //Para el optimizer saber cuantas peticiones llevamos en total.
 BYTE NumeroDePeticionesDeCambio;
 extern radioInterface riActual;
-double tiempoMax;
-double potenciaMax;
 int paquetesRecibidos;
 
 int nClusters;
@@ -102,18 +100,12 @@ BOOL CRM_Repo_Store(REPO_MSSG_RCVD *Peticion)
             break;
         case (AddCoord):
             CRM_Repo_Guardar_Coordenadas(Peticion);
-            break;
-        case (NormCoord):
-            CRM_Repo_Normalizar_Coordenadas();
-            break;
-        case (InclClusters):            
-            CRM_Repo_Calculo_Clusters();
-            break;            
-        case (DetAttNodoPropio):
-            CRM_Repo_Detectar_Atacante();
-            break;
+            break;         
         case (DetAtt):
             CRM_Repo_Proc_Mens_Att(Peticion);
+            break;
+        case (InitTAtt):
+            inicializarTablaAtacantes();
             break;
         default:
             break;
@@ -239,6 +231,15 @@ BOOL CRM_Repo_SendDat(REPO_MSSG_RCVD *Peticion)
             Peticion->Param4 = &array[*(BYTE*)(Peticion->Param2)];
             break;
         }
+        case EnvListaPaq:
+            Peticion->Param1 = Lista_Paq_Rec_Aprendizaje;
+            break;
+        case EnvListaCl:
+            Peticion->Param1 = Lista_Clusters;
+            break;
+        case EnvTablaAt:
+            Peticion->Param1 = Tabla_Atacantes;
+            break;
         default:
             break;
     }
@@ -601,16 +602,6 @@ void CRM_Repo_Guardar_Coordenadas(REPO_MSSG_RCVD *Peticion){
     paquetesRecibidos = *(BYTE*)(Peticion->Param1);
     Lista_Paq_Rec_Aprendizaje[paquetesRecibidos].tiempo = *(BYTE*)(Peticion->Param2);
     Lista_Paq_Rec_Aprendizaje[paquetesRecibidos].RSSI = *(BYTE*)(Peticion->Param3);
-}
-
-double CRM_Repo_Calculo_Distancia(coord pto1, coord pto2){
-    double distancia;
-    double pto1Pr = pto1.RSSI;
-    double pto1t = pto1.tiempo;
-    double pto2Pr = pto2.RSSI;
-    double pto2t = pto2.tiempo;
-    distancia = sqrt (pow(pto2Pr-pto1Pr, 2) + pow(pto2t-pto1t, 2));
-    return distancia;
 }
 
 BOOL CRM_Repo_Proc_Mens_Att(REPO_MSSG_RCVD *Peticion){

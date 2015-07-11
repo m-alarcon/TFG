@@ -52,7 +52,7 @@ typedef enum _OPTACTION
 
 typedef enum _OPTSUBACTION
 {
-    SubActChngCost = 0x01, SubActCambio = 0x02, SubActRespCambio = 0x03, SubActProcInfo
+    SubActChngCost = 0x01, SubActCambio = 0x02, SubActRespCambio = 0x03
 } OPTSUBACTION;
 
 typedef enum _OPTPROCACTION

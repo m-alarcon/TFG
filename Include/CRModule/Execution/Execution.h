@@ -85,6 +85,7 @@ BOOL CRM_Exec_Sleep(EXEC_MSSG_RCVD *Peticion);
 BOOL CRM_Exec_Wake(EXEC_MSSG_RCVD *Peticion);
 BOOL CRM_Exec_TurnOff(EXEC_MSSG_RCVD *Peticion);
 BOOL CRM_Exec_TurnOn(EXEC_MSSG_RCVD *Peticion);
+BOOL CRM_Exec_DisconNode(EXEC_MSSG_RCVD *Peticion);
 /*Fin de las funciones funcionalidad propia*/
 
 /*****************************************************************************/

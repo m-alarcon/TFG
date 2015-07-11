@@ -1552,48 +1552,70 @@ BOOL CRM_Optm_Calculo_Coordenadas(){
     return FALSE;
 }
 
-void CRM_Optm_Normalizar_Coordenadas(){
+void CRM_Optm_Normalizar_Coordenadas(coord *listaPaquetes){
      if(nClusters == 0){
         int i;
         for(i = 0; i < paquetesRecibidos; i++){
-            Lista_Paq_Rec_Aprendizaje[i].RSSI = Lista_Paq_Rec_Aprendizaje[i].RSSI/potenciaMax;
-            Lista_Paq_Rec_Aprendizaje[i].tiempo = Lista_Paq_Rec_Aprendizaje[i].tiempo/tiempoMax;
+            listaPaquetes[i].RSSI = listaPaquetes[i].RSSI/potenciaMax;
+            listaPaquetes[i].tiempo = listaPaquetes[i].tiempo/tiempoMax;
         }
     }
 }
 
-void CRM_Repo_Calculo_Clusters(){
+double CRM_Optm_Calculo_Distancia(coord pto1, coord pto2){
+    double distancia;
+    double pto1Pr = pto1.RSSI;
+    double pto1t = pto1.tiempo;
+    double pto2Pr = pto2.RSSI;
+    double pto2t = pto2.tiempo;
+    distancia = sqrt (pow(pto2Pr-pto1Pr, 2) + pow(pto2t-pto1t, 2));
+    return distancia;
+}
 
-    int i,j;
+void CRM_Optm_Calculo_Clusters(){
+
+    int i,j;        
+    REPO_MSSG_RCVD PeticionRepoListaClusters;
+    PeticionRepoListaClusters.Action = ActSndDta;
+    PeticionRepoListaClusters.DataType = EnvListaCl;
+
+    CRM_Message(NMM, SubM_Repo, &PeticionRepoListaClusters);    
+
+    REPO_MSSG_RCVD PeticionRepoLista;
+    PeticionRepoLista.Action = ActSndDta;
+    PeticionRepoLista.DataType = EnvListaPaq;
+
+    CRM_Message(NMM, SubM_Repo, &PeticionRepoLista);
+            
     for(i = 0; i < paquetesRecibidos; i++){
         if(nClusters == 0){
-            Lista_Clusters[0].centro = Lista_Paq_Rec_Aprendizaje[0];
-            Lista_Clusters[0].radio = initRad;
-            Lista_Clusters[0].nMuestras = 1;
+            (*(cl*)(PeticionRepoListaClusters.Param1)).centro = *(coord*)PeticionRepoLista.Param1;
+            (*(cl*)(PeticionRepoListaClusters.Param1)).radio = initRad;
+            (*(cl*)(PeticionRepoListaClusters.Param1)).nMuestras = 1;
             nClusters++;
         } else {
             int clusterActualizado = 0;
             for(j = 0; j < nClusters; j++){
-                double distancia = CRM_Repo_Calculo_Distancia(Lista_Clusters[j].centro,Lista_Paq_Rec_Aprendizaje[i]);
-                if (distancia <= Lista_Clusters[j].radio){
-                    Lista_Clusters[j].radio += distancia;
-                    Lista_Clusters[j].centro.RSSI = ((Lista_Clusters[j].centro.RSSI * Lista_Clusters[j].nMuestras) + Lista_Paq_Rec_Aprendizaje[i].RSSI)/(Lista_Clusters[j].nMuestras + 1);
-                    Lista_Clusters[j].centro.tiempo = ((Lista_Clusters[j].centro.tiempo * Lista_Clusters[j].nMuestras) + Lista_Paq_Rec_Aprendizaje[i].tiempo)/(Lista_Clusters[j].nMuestras + 1);
-                    Lista_Clusters[j].nMuestras++;
+                double distancia = CRM_Optm_Calculo_Distancia((*(cl*)(PeticionRepoListaClusters.Param1 + j)).centro,*(coord*)(PeticionRepoLista.Param1 + i));
+                if (distancia <= (*(cl*)(PeticionRepoListaClusters.Param1 + j)).radio){
+                    (*(cl*)(PeticionRepoListaClusters.Param1 + j)).radio += distancia;
+                    (*(cl*)(PeticionRepoListaClusters.Param1 + j)).centro.RSSI = (((*(cl*)(PeticionRepoListaClusters.Param1 + j)).centro.RSSI * (*(cl*)(PeticionRepoListaClusters.Param1 + j)).nMuestras) + (*(coord*)(PeticionRepoLista.Param1 + i)).RSSI)/((*(cl*)(PeticionRepoListaClusters.Param1 + j)).nMuestras + 1);
+                    (*(cl*)(PeticionRepoListaClusters.Param1 + j)).centro.tiempo = (((*(cl*)(PeticionRepoListaClusters.Param1 + j)).centro.tiempo * (*(cl*)(PeticionRepoListaClusters.Param1 + j)).nMuestras) + (*(coord*)(PeticionRepoLista.Param1 + i)).tiempo)/((*(cl*)(PeticionRepoListaClusters.Param1 + j)).nMuestras + 1);
+                    (*(cl*)(PeticionRepoListaClusters.Param1 + j)).nMuestras++;
                     clusterActualizado = 1;
                 }
             }
             if (clusterActualizado == 0) {
-                Lista_Clusters[nClusters].centro = Lista_Paq_Rec_Aprendizaje[i];
-                Lista_Clusters[nClusters].radio = initRad;
-                Lista_Clusters[nClusters].nMuestras = 1;
+                (*(cl*)(PeticionRepoListaClusters.Param1 + nClusters)).centro = *(coord*)(PeticionRepoLista.Param1 + i);
+                (*(cl*)(PeticionRepoListaClusters.Param1 + nClusters)).radio = initRad;
+                (*(cl*)(PeticionRepoListaClusters.Param1 + nClusters)).nMuestras = 1;
                 nClusters++;
             }
         }
     }    
 }
 
-BOOL CRM_Repo_Detectar_Atacante(){
+BOOL CRM_Optm_Detectar_Atacante(){
     BYTE RSSI;
     BYTE *pRSSI = &RSSI;
     BYTE *attacker;
@@ -1605,6 +1627,19 @@ BOOL CRM_Repo_Detectar_Atacante(){
     coord paquete;
     BYTE i, inclCluster;
     inclCluster = 0;
+    
+    REPO_MSSG_RCVD PeticionRepoListaClusters;
+    PeticionRepoListaClusters.Action = ActSndDta;
+    PeticionRepoListaClusters.DataType = EnvListaCl;
+
+    CRM_Message(NMM, SubM_Repo, &PeticionRepoListaClusters);    
+
+    REPO_MSSG_RCVD PeticionRepoLista;
+    PeticionRepoLista.Action = ActSndDta;
+    PeticionRepoLista.DataType = EnvListaPaq;
+
+    CRM_Message(NMM, SubM_Repo, &PeticionRepoLista);    
+    
     if ( GetRSSI(riActual,pRSSI) == 0x00 ){  //Se ha recibido un paquete
         Printf("\r\nSe ha recibido un paquete\r\n");
         TiempoActual = MiWi_TickGet();
@@ -1617,8 +1652,8 @@ BOOL CRM_Repo_Detectar_Atacante(){
 
             //Recorrer el array de clusters y comprobar si el paquete pertenece a algun cluster
             for(i = 0; i < nClusters; i++){
-                double distancia = CRM_Repo_Calculo_Distancia(Lista_Clusters[i].centro,paquete);
-                if (distancia < Lista_Clusters[i].radio && inclCluster == 0){
+                double distancia = CRM_Optm_Calculo_Distancia((*(cl*)(PeticionRepoListaClusters.Param1 + i)).centro,paquete);
+                if (distancia < (*(cl*)(PeticionRepoListaClusters.Param1 + i)).radio && inclCluster == 0){
                     inclCluster = 1;
                     break;
                 }
@@ -1633,17 +1668,24 @@ BOOL CRM_Repo_Detectar_Atacante(){
                     dirAtt[i] = *(attacker + i);
                     dirDet[i] = GetMyLongAddress(i);
                 }
+                
+                //Pedimos la tabla de atacantes
+                REPO_MSSG_RCVD PeticionRepoTablaAtacantes;
+                PeticionRepoTablaAtacantes.Action = ActSndDta;
+                PeticionRepoTablaAtacantes.DataType = EnvTablaAt;
+
+                CRM_Message(NMM, SubM_Repo, &PeticionRepoTablaAtacantes); 
    
                 for (i = 0; i < (CONNECTION_SIZE+1)*(CONNECTION_SIZE+1); i++){
-                    if (isSameAddress(Tabla_Atacantes[i].direccionAtacante, dirAtt) && isSameAddress(Tabla_Atacantes[i].direccionDetector, dirDet)){
-                        if(Tabla_Atacantes[i].esAtacante == 1){
+                    if (isSameAddress((*(at*)(PeticionRepoTablaAtacantes.Param1 + i)).direccionAtacante, dirAtt) && isSameAddress((*(at*)(PeticionRepoTablaAtacantes.Param1 + i)).direccionDetector, dirDet)){
+                        if((*(at*)(PeticionRepoTablaAtacantes.Param1 + i)).esAtacante == 1){
                             Printf("\r\nYa habia detectado a ese como atacante.");
                             return FALSE;
                         } else {            
-                            Tabla_Atacantes[i].esAtacante = 1;
+                            (*(at*)(PeticionRepoTablaAtacantes.Param1 + i)).esAtacante = 1;
                         }
                     }
-                    if (isSameAddress(Tabla_Atacantes[i].direccionAtacante, dirAtt) && Tabla_Atacantes[i].esAtacante == 1){
+                    if (isSameAddress((*(at*)(PeticionRepoTablaAtacantes.Param1 + i)).direccionAtacante, dirAtt) && (*(at*)(PeticionRepoTablaAtacantes.Param1 + i)).esAtacante == 1){
                         nDetectado++;
                     }        
                 }
@@ -1806,7 +1848,11 @@ BOOL CRM_Optm_Int(void)
     learningTime++;
     if (learningTime == reinicioAtacantesTimeMax){
         Printf("Se reinicia la tabla de atacantes\r\n");
-        inicializarTablaAtacantes();
+        REPO_MSSG_RCVD PeticionRepoInitAtt;
+        PeticionRepoInitAtt.Action = ActStr;
+        PeticionRepoInitAtt.DataType = InitTAtt;
+
+        CRM_Message(NMM, SubM_Repo, &PeticionRepoInitAtt);
         learningTime = 0;
     }
     //Esto lo tiene que hacer hasta que se termine el tiempo de aprendizaje
@@ -1824,19 +1870,16 @@ BOOL CRM_Optm_Int(void)
             
     if (aprendizaje == 1){
         if(normalizado == 0) {
-            CRM_Optm_Normalizar_Coordenadas();
-            REPO_MSSG_RCVD PeticionRepoNorm;
-            PeticionRepoNorm.Action = ActStr;
-            PeticionRepoNorm.DataType = NormCoord;
+            REPO_MSSG_RCVD PeticionRepoLista;
+            PeticionRepoLista.Action = ActSndDta;
+            PeticionRepoLista.DataType = EnvListaPaq;
 
-            CRM_Message(NMM, SubM_Repo, &PeticionRepoNorm);
+            CRM_Message(NMM, SubM_Repo, &PeticionRepoLista);
+            
+            CRM_Optm_Normalizar_Coordenadas((coord*)PeticionRepoLista.Param1);
             normalizado = 1;
         } else if (normalizado == 1 && clustersDone == 0) {
-            REPO_MSSG_RCVD PeticionRepoClusters;
-            PeticionRepoClusters.Action = ActStr;
-            PeticionRepoClusters.DataType = InclClusters;
-
-            CRM_Message(NMM, SubM_Repo, &PeticionRepoClusters);
+            CRM_Optm_Calculo_Clusters();
             clustersDone = 1;
         } else {
             if(GetPayloadToRead(riActual) != 0 && MSSG_PROC_OPTM == 0){
@@ -1844,14 +1887,13 @@ BOOL CRM_Optm_Int(void)
                 if (learningTime == 0xEFFFFFFF){
                     learningTime = 0;
                 }
-                //Manda un mensaje a repo para que analice el paquete que se ha recibido
-                REPO_MSSG_RCVD PeticionRepoAtacante;
-                PeticionRepoAtacante.Action = ActStr;
-                PeticionRepoAtacante.DataType = DetAttNodoPropio;//CAMBIAR ESTO
-
-                CRM_Message(NMM, SubM_Repo, &PeticionRepoAtacante); 
+                CRM_Optm_Detectar_Atacante();
             }
         }
+    }
+    
+    if (learningTime == 3000){
+        SetTXPower(riActual, 0xFF);
     }
 #endif
 
