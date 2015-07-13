@@ -1341,9 +1341,7 @@ CRMODULE_TEST:
         Rutina_Principal();
 
 DC_TEST:   
-    if(WhichRIHasData() != 0){
-        Recibir_info();
-    }
+                                continue;
         //                        break;
     }
     return 0;

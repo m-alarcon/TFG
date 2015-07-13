@@ -6,12 +6,14 @@
         <group>
             <file>file:/C:/Users/Manuel/Documents/TFG/NODE%20FW.X/CWSN%20LSI%20Node/Include/WirelessProtocols/ConfigApp.h</file>
             <file>file:/C:/Users/Manuel/Documents/TFG/CRModule/Repository/Repository.c</file>
+            <file>file:/C:/Users/Manuel/Documents/TFG/CRModule/VCC/VCC.c</file>
             <file>file:/C:/Users/Manuel/Documents/TFG/NODE%20FW.X/MainAppCode_NodeTest.c</file>
+            <file>file:/C:/Users/Manuel/Documents/TFG/CRModule/Messenger/Messenger.c</file>
             <file>file:/C:/Users/Manuel/Documents/TFG/CRModule/Optimizer/Optimizer.c</file>
-            <file>file:/C:/Users/Manuel/Documents/TFG/NODE%20FW.X/CWSN%20LSI%20Node/WirelessProtocols/SymbolTime.c</file>
-            <file>file:/C:/Users/Manuel/Documents/TFG/NODE%20FW.X/CWSN%20LSI%20Node/Include/WirelessProtocols/SymbolTime.h</file>
-            <file>file:/C:/Users/Manuel/Documents/TFG/NODE%20FW.X/Aplicacion.c</file>
+            <file>file:/C:/Users/Manuel/Documents/TFG/CRModule/Access/Access.c</file>
+            <file>file:/C:/Users/Manuel/Documents/TFG/NODE%20FW.X/CWSN%20LSI%20Node/HardwareProfile.c</file>
             <file>file:/C:/Users/Manuel/Documents/TFG/CRModule/Execution/Execution.c</file>
+            <file>file:/C:/Users/Manuel/Documents/TFG/NODE%20FW.X/Aplicacion.c</file>
         </group>
     </open-files>
 </project-private>

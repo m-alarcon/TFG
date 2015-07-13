@@ -232,13 +232,13 @@ BOOL CRM_Repo_SendDat(REPO_MSSG_RCVD *Peticion)
             break;
         }
         case EnvListaPaq:
-            Peticion->Param1 = Lista_Paq_Rec_Aprendizaje;
+            Peticion->Param2 = &Lista_Paq_Rec_Aprendizaje[*(BYTE*)(Peticion->Param1)];
             break;
         case EnvListaCl:
-            Peticion->Param1 = Lista_Clusters;
+            Peticion->Param2 = &Lista_Clusters[*(BYTE*)(Peticion->Param1)];
             break;
         case EnvTablaAt:
-            Peticion->Param1 = Tabla_Atacantes;
+            Peticion->Param2 = &Tabla_Atacantes[*(BYTE*)(Peticion->Param1)];
             break;
         default:
             break;
@@ -536,8 +536,30 @@ void CRM_Repo_ProbCambio(BYTE Valor)
 
 void inicializarTablaAtacantes(){
     BYTE i,j,k;
-    BYTE TablaDirecciones[CONNECTION_SIZE+1][MY_ADDRESS_LENGTH];
+    //BYTE TablaDirecciones[CONNECTION_SIZE+1][MY_ADDRESS_LENGTH];
+    BYTE TablaDirecciones[3][MY_ADDRESS_LENGTH];
 
+    #if defined NODE_1
+    BYTE EUINodoExt1[] = {EUI_0, EUI_1, EUI_2, EUI_3, EUI_4, EUI_5, EUI_6, 0x22};
+    BYTE EUINodoExt2[] = {EUI_0, EUI_1, EUI_2, EUI_3, EUI_4, EUI_5, EUI_6, 0x33};
+    #elif defined NODE_2
+    BYTE EUINodoExt1[] = {EUI_0, EUI_1, EUI_2, EUI_3, EUI_4, EUI_5, EUI_6, 0x11};
+    BYTE EUINodoExt2[] = {EUI_0, EUI_1, EUI_2, EUI_3, EUI_4, EUI_5, EUI_6, 0x33};
+    #elif defined NODE_3
+    BYTE EUINodoExt1[] = {EUI_0, EUI_1, EUI_2, EUI_3, EUI_4, EUI_5, EUI_6, 0x11};
+    BYTE EUINodoExt2[] = {EUI_0, EUI_1, EUI_2, EUI_3, EUI_4, EUI_5, EUI_6, 0x22};
+    #endif    
+    
+    for(i = 0; i < MY_ADDRESS_LENGTH; i++){
+        TablaDirecciones[0][i] = EUINodoExt1[i];
+        TablaDirecciones[1][i] = EUINodoExt2[i];
+    }
+    
+    for (k = 0; k < MY_ADDRESS_LENGTH; k++){
+        TablaDirecciones[2][k] = myLongAddress[k];
+    }
+    
+    /*
     for (i = 0; i < CONNECTION_SIZE+1; i++){
         if (i < CONNECTION_SIZE && CONNECTION_SIZE != 0){
             for (k = 0; k < MY_ADDRESS_LENGTH; k++){
@@ -550,9 +572,12 @@ void inicializarTablaAtacantes(){
         }
 
     }
+     */
     
-    for (i = 0; i < CONNECTION_SIZE+1; i++){
-        for (j = i*(CONNECTION_SIZE+1); j < (i*(CONNECTION_SIZE+1))+CONNECTION_SIZE+1; j++){
+//    for (i = 0; i < CONNECTION_SIZE+1; i++){
+//        for (j = i*(CONNECTION_SIZE+1); j < (i*(CONNECTION_SIZE+1))+CONNECTION_SIZE+1; j++){
+    for (i = 0; i < 3; i++){
+        for (j = i*(3); j < (i*(3))+3; j++){    
             for (k = 0; k < MY_ADDRESS_LENGTH; k++){
                 Tabla_Atacantes[j].direccionAtacante[k] = TablaDirecciones[i][k];
             }
@@ -561,13 +586,16 @@ void inicializarTablaAtacantes(){
     }
 
     j = 0;
-    for (i = 0; i < (CONNECTION_SIZE+1)*(CONNECTION_SIZE+1); i++){
-        if (j < CONNECTION_SIZE+1){
+//    for (i = 0; i < (CONNECTION_SIZE+1)*(CONNECTION_SIZE+1); i++){
+//        if (j < CONNECTION_SIZE+1){
+    for (i = 0; i < (3)*(3); i++){
+        if (j < 3){    
             for (k = 0; k < MY_ADDRESS_LENGTH; k++){
                 Tabla_Atacantes[i].direccionDetector[k] = TablaDirecciones[j][k];
             }
             j++;
-        } else if (j == CONNECTION_SIZE+1){
+//        } else if (j == CONNECTION_SIZE+1){
+        } else if (j == 3){    
             j = 0;
             for (k = 0; k < MY_ADDRESS_LENGTH; k++){
                 Tabla_Atacantes[i].direccionDetector[k] = TablaDirecciones[j][k];
@@ -605,7 +633,7 @@ void CRM_Repo_Guardar_Coordenadas(REPO_MSSG_RCVD *Peticion){
 }
 
 BOOL CRM_Repo_Proc_Mens_Att(REPO_MSSG_RCVD *Peticion){
-    Printf("\r\nRecibido mensaje de atacante.");
+    Printf("\r\n/////////////////////////////////Recibido mensaje de atacante.");
     BYTE dirAtt[MY_ADDRESS_LENGTH], dirDet[MY_ADDRESS_LENGTH], i;
     BYTE nDetectado = 0;
     for(i = 0; i < MY_ADDRESS_LENGTH; i++){
@@ -614,17 +642,37 @@ BOOL CRM_Repo_Proc_Mens_Att(REPO_MSSG_RCVD *Peticion){
     for(i = 0; i < MY_ADDRESS_LENGTH; i++){
         dirDet[i] = *(BYTE*)(Peticion->Param2 + i + MY_ADDRESS_LENGTH);
     }
-    for (i = 0; i < (CONNECTION_SIZE+1)*(CONNECTION_SIZE+1); i++){
+    //for (i = 0; i < (CONNECTION_SIZE+1)*(CONNECTION_SIZE+1); i++){
+    for (i = 0; i < (3)*(3); i++){
         if (isSameAddress(Tabla_Atacantes[i].direccionAtacante, dirAtt) && isSameAddress(Tabla_Atacantes[i].direccionDetector, dirDet)){
             if(Tabla_Atacantes[i].esAtacante == 1){
                 Printf("\r\nYa habia recibido ese mensaje.");
                 return FALSE;
             } else {            
                 Tabla_Atacantes[i].esAtacante = 1;
+                //Mando un mensaje por VCC al resto de nodos con la informacion del atacante.
+                Printf("\r\nMando información del atacante y el detector al resto de nodos.");
+                BYTE MensajeVCC[] = {VccCtrlMssg, SubM_Repo, ActStr, DetAtt, 0, dirAtt[0], dirAtt[1], 
+                                    dirAtt[2], dirAtt[3], dirAtt[4], dirAtt[5], dirAtt[6], dirAtt[7], 
+                                    dirDet[0], dirDet[1], dirDet[2], dirDet[3], dirDet[4], dirDet[5], 
+                                    dirDet[6], dirDet[7], riActual};
+                MSN_MSSG_RCVD PeticionAtacante;
+                VCC_MSSG_RCVD PeticionVCCAtacante;
+
+                PeticionVCCAtacante.AddrMode = BROADCAST_ADDRMODE;
+                PeticionVCCAtacante.Action = ActSend;
+                PeticionVCCAtacante.BufferVCC = MensajeVCC;
+                PeticionVCCAtacante.Transceiver = MIWI_0434;
+                BYTE sizeBufferVCC = 22;
+                PeticionVCCAtacante.Param1 = &sizeBufferVCC;
+
+                PeticionAtacante.Peticion_Destino.PeticionVCC = &PeticionVCCAtacante;
+
+                CRM_Message(VCC, SubM_Ext, &PeticionAtacante);                
             }
         }
         if (isSameAddress(Tabla_Atacantes[i].direccionAtacante, dirAtt) && Tabla_Atacantes[i].esAtacante == 1){
-            nDetectado++;
+            nDetectado++;            
         }        
     }
 
@@ -635,7 +683,8 @@ BOOL CRM_Repo_Proc_Mens_Att(REPO_MSSG_RCVD *Peticion){
         
         /////////////MANDAR MENSAJE A EXECUTION/////////////////
         BYTE index;
-        for (i = 0; i < CONNECTION_SIZE; i++){
+        //for (i = 0; i < CONNECTION_SIZE; i++){
+        for (i = 0; i < 2; i++){    
             if(isSameAddress(dirAtt, ConnectionTable[i].Address)){
                 index = i;
             }
@@ -647,26 +696,7 @@ BOOL CRM_Repo_Proc_Mens_Att(REPO_MSSG_RCVD *Peticion){
         
     }
     //Guardo en la tabla quién es el atacante
-    
-    //Mando un mensaje por VCC al resto de nodos con la informacion del atacante.
-    Printf("\r\nMando información del atacante y el detector al resto de nodos.");
-    BYTE MensajeVCC[] = {VccCtrlMssg, SubM_Repo, ActStr, DetAtt, 0, dirAtt[0], dirAtt[1], 
-                        dirAtt[2], dirAtt[3], dirAtt[4], dirAtt[5], dirAtt[6], dirAtt[7], 
-                        dirDet[0], dirDet[1], dirDet[2], dirDet[3], dirDet[4], dirDet[5], 
-                        dirDet[6], dirDet[7], riActual};
-    MSN_MSSG_RCVD PeticionAtacante;
-    VCC_MSSG_RCVD PeticionVCCAtacante;
-
-    PeticionVCCAtacante.AddrMode = BROADCAST_ADDRMODE;
-    PeticionVCCAtacante.Action = ActSend;
-    PeticionVCCAtacante.BufferVCC = MensajeVCC;
-    PeticionVCCAtacante.Transceiver = MIWI_0434;
-    BYTE sizeBufferVCC = 22;
-    PeticionVCCAtacante.Param1 = &sizeBufferVCC;
-
-    PeticionAtacante.Peticion_Destino.PeticionVCC = &PeticionVCCAtacante;
-
-    CRM_Message(VCC, SubM_Ext, &PeticionAtacante);
+   
 }
 
 /*Funciones de inicializacion*/

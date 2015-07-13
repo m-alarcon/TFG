@@ -89,7 +89,7 @@ BOOL CRM_Message_VCC(INPUT SUB_MODULE DestSubModule, MSN_MSSG_RCVD *Peticion)
             break;
         case SubM_Repo: /*Mensaje entrante para Repostory.*/
             ComprobarPermiso.Operation = Peticion->Peticion_Destino.PeticionRepo->Action;
-            if (CRM_Mssg_Send_AccCtrl(&ComprobarPermiso))
+            //if (CRM_Mssg_Send_AccCtrl(&ComprobarPermiso))
             {
                 CRM_Mssg_Send_Repo(Peticion->Peticion_Destino.PeticionRepo);
             }

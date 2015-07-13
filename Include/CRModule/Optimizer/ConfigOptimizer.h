@@ -48,7 +48,7 @@
 #if defined(MRF49XA) || defined(MRF49XA_alt)
     #define maxRTxXDefecto RETRANSMISSION_TIMES
 #else
-    #define maxRTxXDefecto 30 //TODO el MRF24J40 no tiene por defecto rtx, hay que
+    #define maxRTxXDefecto 20 //TODO el MRF24J40 no tiene por defecto rtx, hay que
         //implementarlas en apliacion y definiriamos nosotros cuantas como
         //maximo queremos que se den.
 #endif
