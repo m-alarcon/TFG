@@ -37,6 +37,8 @@ BYTE NumeroDePeticionesDeCambio;
 extern radioInterface riActual;
 int paquetesRecibidos;
 
+extern BYTE TablaConexionesInicial[MIWI_CONN_ENTRY_SIZE*CONNECTION_SIZE];
+
 int nClusters;
 cl cluster;
 /*****************************************************************************/
@@ -166,7 +168,7 @@ BOOL CRM_Repo_SendDat(REPO_MSSG_RCVD *Peticion)
             }
             break;
         case EnvNMsg:
-            for(i = 0; i < CONNECTION_SIZE; i++){
+            for(i = 0; i < CONNECTION_SIZE; i++){            
                 if(isSameAddress(Peticion->Param1, ConnectionTable[i].Address)){
                     Peticion->Param2 = &NumMssgIntercambiados[i];
                 }
@@ -428,9 +430,13 @@ BOOL CRM_Repo_NodosRed(REPO_MSSG_RCVD *Peticion)
                         if(EstadoGT == EsperandoDecFinal){
                             ProcReq = ProcDecFinal;
                         } else if(EstadoGT == EsperandoDecisionRestoNodos){
-                            Printf("\r\nDos nodos han decidido cambiar de canal al mismo tiempo. Se vuelve al principio.");
-                            ProcReq = ProcRespCambio;
-                            limpiaBufferRX();
+                            Printf("\r\nDos nodos han decidido cambiar de canal al mismo tiempo.");
+                            #ifdef NODE_1
+                                ProcReq = ProcRespCambio;
+                                InfoCambio[0] = TRUE;
+                            #else
+                                ProcReq = ProcDecFinal;                     
+                            #endif
                         } else {
                             ProcReq = ProcCambioCanal;
                         }                        
@@ -536,8 +542,7 @@ void CRM_Repo_ProbCambio(BYTE Valor)
 
 void inicializarTablaAtacantes(){
     BYTE i,j,k;
-    //BYTE TablaDirecciones[CONNECTION_SIZE+1][MY_ADDRESS_LENGTH];
-    BYTE TablaDirecciones[3][MY_ADDRESS_LENGTH];
+    BYTE TablaDirecciones[CONNECTION_SIZE+1][MY_ADDRESS_LENGTH];
 
     #if defined NODE_1
     BYTE EUINodoExt1[] = {EUI_0, EUI_1, EUI_2, EUI_3, EUI_4, EUI_5, EUI_6, 0x22};
@@ -549,7 +554,7 @@ void inicializarTablaAtacantes(){
     BYTE EUINodoExt1[] = {EUI_0, EUI_1, EUI_2, EUI_3, EUI_4, EUI_5, EUI_6, 0x11};
     BYTE EUINodoExt2[] = {EUI_0, EUI_1, EUI_2, EUI_3, EUI_4, EUI_5, EUI_6, 0x22};
     #endif    
-    
+    /*
     for(i = 0; i < MY_ADDRESS_LENGTH; i++){
         TablaDirecciones[0][i] = EUINodoExt1[i];
         TablaDirecciones[1][i] = EUINodoExt2[i];
@@ -557,9 +562,8 @@ void inicializarTablaAtacantes(){
     
     for (k = 0; k < MY_ADDRESS_LENGTH; k++){
         TablaDirecciones[2][k] = myLongAddress[k];
-    }
+    }*/
     
-    /*
     for (i = 0; i < CONNECTION_SIZE+1; i++){
         if (i < CONNECTION_SIZE && CONNECTION_SIZE != 0){
             for (k = 0; k < MY_ADDRESS_LENGTH; k++){
@@ -572,12 +576,10 @@ void inicializarTablaAtacantes(){
         }
 
     }
-     */
     
-//    for (i = 0; i < CONNECTION_SIZE+1; i++){
-//        for (j = i*(CONNECTION_SIZE+1); j < (i*(CONNECTION_SIZE+1))+CONNECTION_SIZE+1; j++){
-    for (i = 0; i < 3; i++){
-        for (j = i*(3); j < (i*(3))+3; j++){    
+    
+    for (i = 0; i < CONNECTION_SIZE+1; i++){
+        for (j = i*(CONNECTION_SIZE+1); j < (i*(CONNECTION_SIZE+1))+CONNECTION_SIZE+1; j++){   
             for (k = 0; k < MY_ADDRESS_LENGTH; k++){
                 Tabla_Atacantes[j].direccionAtacante[k] = TablaDirecciones[i][k];
             }
@@ -586,16 +588,13 @@ void inicializarTablaAtacantes(){
     }
 
     j = 0;
-//    for (i = 0; i < (CONNECTION_SIZE+1)*(CONNECTION_SIZE+1); i++){
-//        if (j < CONNECTION_SIZE+1){
-    for (i = 0; i < (3)*(3); i++){
-        if (j < 3){    
+    for (i = 0; i < (CONNECTION_SIZE+1)*(CONNECTION_SIZE+1); i++){
+        if (j < CONNECTION_SIZE+1){
             for (k = 0; k < MY_ADDRESS_LENGTH; k++){
                 Tabla_Atacantes[i].direccionDetector[k] = TablaDirecciones[j][k];
             }
             j++;
-//        } else if (j == CONNECTION_SIZE+1){
-        } else if (j == 3){    
+        } else if (j == CONNECTION_SIZE+1){
             j = 0;
             for (k = 0; k < MY_ADDRESS_LENGTH; k++){
                 Tabla_Atacantes[i].direccionDetector[k] = TablaDirecciones[j][k];
@@ -642,8 +641,26 @@ BOOL CRM_Repo_Proc_Mens_Att(REPO_MSSG_RCVD *Peticion){
     for(i = 0; i < MY_ADDRESS_LENGTH; i++){
         dirDet[i] = *(BYTE*)(Peticion->Param2 + i + MY_ADDRESS_LENGTH);
     }
-    //for (i = 0; i < (CONNECTION_SIZE+1)*(CONNECTION_SIZE+1); i++){
-    for (i = 0; i < (3)*(3); i++){
+    BYTE numNodo;
+    switch(dirAtt[7]){
+    case 0x11:
+        numNodo = 1;
+        break;
+    case 0x22:
+        numNodo = 2;
+        break;
+    case 0x33:
+        numNodo = 3;
+        break;
+    default:
+        numNodo = 0;
+        break;
+    }
+    char trazaAtt[80];
+    sprintf(trazaAtt, "\r\nSe ha detectado como atacante al nodo %d.\r\n", numNodo);
+    Printf(trazaAtt);     
+    
+    for (i = 0; i < (CONNECTION_SIZE+1)*(CONNECTION_SIZE+1); i++){
         if (isSameAddress(Tabla_Atacantes[i].direccionAtacante, dirAtt) && isSameAddress(Tabla_Atacantes[i].direccionDetector, dirDet)){
             if(Tabla_Atacantes[i].esAtacante == 1){
                 Printf("\r\nYa habia recibido ese mensaje.");
@@ -676,15 +693,14 @@ BOOL CRM_Repo_Proc_Mens_Att(REPO_MSSG_RCVD *Peticion){
         }        
     }
 
-    if (nDetectado >= 1){
+    if (nDetectado >= 2){
         Printf("\r\nVarios nodos han detectado al mismo atacante. Se desconecta de la red.");
         //Se desconecta a ese de la red.
         //Se puede hacer cualquier otra cosa.
         
         /////////////MANDAR MENSAJE A EXECUTION/////////////////
         BYTE index;
-        //for (i = 0; i < CONNECTION_SIZE; i++){
-        for (i = 0; i < 2; i++){    
+        for (i = 0; i < CONNECTION_SIZE; i++){
             if(isSameAddress(dirAtt, ConnectionTable[i].Address)){
                 index = i;
             }
@@ -693,6 +709,7 @@ BOOL CRM_Repo_Proc_Mens_Att(REPO_MSSG_RCVD *Peticion){
         PeticionDisconn.Action = ActDisconn;
         PeticionDisconn.Param1 = index;
         CRM_Message(NMM, SubM_Exec, &PeticionDisconn);
+        DumpConnection(0xFF);
         
     }
     //Guardo en la tabla quién es el atacante

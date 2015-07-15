@@ -4518,7 +4518,7 @@ static BYTE InitMIWI(){
             //      in the radio range.
             /******************************************************************/
             spi_prev_ec = GetSPIErrorCounter();
-            Miwi_Conn_Index = MiApp_EstablishConnection(0, CONN_MODE_DIRECT, mb);
+            Miwi_Conn_Index = MiApp_EstablishConnection(0xFF, CONN_MODE_DIRECT, mb);
             if (GetSPIErrorCounter() != spi_prev_ec){
                 ResetSPIErrorCounter();
                 Printf("\r\nSPI errors occured during MiWi initialization.");

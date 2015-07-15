@@ -178,7 +178,7 @@
          * Recommended values go from 8 to 32, depending on application's needs 
          * and the network topology.
          **********************************************************************/
-        #define CONNECTION_SIZE     1
+        #define CONNECTION_SIZE     2
             #if CONNECTION_SIZE > 128   //Juan: limited by NodeHAL error codes.
                 #undef CONNECTION_SIZE
                 #define CONNECTION_SIZE 128

@@ -17,6 +17,6 @@
 #define	APLICACION_H
 
 
-void limpiaBufferRX(void);
+void limpiaBufferRX(radioInterface radio);
 
 #endif	/* APLICACION_H */

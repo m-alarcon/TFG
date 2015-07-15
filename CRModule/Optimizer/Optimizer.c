@@ -48,6 +48,7 @@ extern BOOL EnviandoMssgApp;/*Para  la preuba de que mientras se envían datos
                              en el que se tocan funciones de miapp que pueden
                              tocar registros conflictivos. Ver enviodatos.c*/
 extern BOOL RecibiendoMssg;/*PArecido a lo de arriba.*/
+extern BYTE TablaConexionesInicial[MIWI_CONN_ENTRY_SIZE*CONNECTION_SIZE];
 
 //#if defined(TEST4)
 BYTE BufferPrueba[RX_BUFFER_SIZE];
@@ -379,10 +380,6 @@ NOACEPTA: //Si no queremos notifcar el no cambio comentariamos y dejaríamos solo
         case ProcCambioCanal:
         {
             CHNG_MSSG_RCVD = 1;
-            /*if(!primera){
-                limpiaBufferRX();
-                primera = 1;
-            }*/
             if(EstadoGT == Clear){
                 Printf("\r\nSe ha recibido peticion de cambio de canal del otro nodo.");
                 nRespuestasAfirmativas++;
@@ -522,7 +519,7 @@ NOACEPTA: //Si no queremos notifcar el no cambio comentariamos y dejaríamos solo
                     } else {
                         Printf("\r\nRespuesta negativa de un nodo con el que no me comunico mucho.");
                         MilisDeTimeOut = 0;
-                        if(nRespuestasNegativas == CONNECTION_SIZE){
+                        if(nRespuestasNegativas == CONNECTION_SIZE){                        
                             Printf("\r\nTodos los nodos han rechazado cambiarse de canal. Me cambio solo."); 
                             
                             EXEC_MSSG_RCVD PeticionExec;
@@ -1439,13 +1436,10 @@ BOOL CRM_Optm_Cons(OPTM_MSSG_RCVD *Peticion){
             } else {
                 BYTE diff;
                 if (*(BYTE*)(PeticionRepoCanales.Param4) > RSSICanalOtroNodo){
-                    Printf("\r\nEl valor que tenia almacenado yo era mayor que el que me envía el otro nodo");
                     diff = (*(BYTE*)(PeticionRepoCanales.Param4) - RSSICanalOtroNodo);
                 } else { 
-                    Printf("\r\nEl valor que tenia almacenado yo era mayor que el que me envía el otro nodo");
                     diff = (RSSICanalOtroNodo - *(BYTE*)(PeticionRepoCanales.Param4)); 
                 }
-                Printf("\r\nHa calculado la diferencia de RSSI");
                 if(diff < 0x05){
                     cambio = TRUE;
                 } else {
@@ -1682,6 +1676,24 @@ BOOL CRM_Optm_Detectar_Atacante(){
             if (inclCluster == 0) {
                 Printf("\r\nSe ha detectado atacante.");
                 GetRXSourceAddr(riActual, attacker);
+                BYTE numNodo;
+                switch(attacker[7]){
+                    case 0x11:
+                        numNodo = 1;
+                        break;
+                    case 0x22:
+                        numNodo = 2;
+                        break;
+                    case 0x33:
+                        numNodo = 3;
+                        break;
+                    default:
+                        numNodo = 0;
+                        break;
+                }
+                char trazaAtt[80];
+                sprintf(trazaAtt, "\r\nSe ha detectado como atacante al nodo %d.\r\n", numNodo);
+                Printf(trazaAtt);     
                 //Añado en la tabla de atacantes al que he detectado
                 BYTE dirAtt[MY_ADDRESS_LENGTH], dirDet[MY_ADDRESS_LENGTH], a;
                 for (i = 0; i < MY_ADDRESS_LENGTH; i++){
@@ -1694,8 +1706,7 @@ BOOL CRM_Optm_Detectar_Atacante(){
                 PeticionRepoTablaAtacantes.Action = ActSndDta;
                 PeticionRepoTablaAtacantes.DataType = EnvTablaAt;               
    
-                //for (i = 0; i < (CONNECTION_SIZE+1)*(CONNECTION_SIZE+1); i++){
-                for (i = 0; i < (3)*(3); i++){    
+                for (i = 0; i < (CONNECTION_SIZE+1)*(CONNECTION_SIZE+1); i++){                
                     PeticionRepoTablaAtacantes.Param1 = &i;
                     CRM_Message(NMM, SubM_Repo, &PeticionRepoTablaAtacantes);
                     if (isSameAddress((*(at*)(PeticionRepoTablaAtacantes.Param2)).direccionAtacante, dirAtt) && isSameAddress((*(at*)PeticionRepoTablaAtacantes.Param2).direccionDetector, dirDet)){
@@ -1711,15 +1722,14 @@ BOOL CRM_Optm_Detectar_Atacante(){
                     }        
                 }
 
-                if (nDetectado >= 1){
+                if (nDetectado >= 2){
                     Printf("\r\nVarios nodos han detectado al mismo atacante. Se desconecta de la red.");
                     //Se desconecta a ese de la red.
                     //Se puede hacer cualquier otra cosa.
 
                     /////////////MANDAR MENSAJE A EXECUTION/////////////////
                     BYTE index;
-                    //for (i = 0; i < CONNECTION_SIZE; i++){
-                    for (i = 0; i < CONNECTION_SIZE; i++){    
+                    for (i = 0; i < CONNECTION_SIZE; i++){                    
                         if(isSameAddress(dirAtt, ConnectionTable[i].Address)){
                             index = i;
                         }
@@ -1728,6 +1738,7 @@ BOOL CRM_Optm_Detectar_Atacante(){
                     PeticionDisconn.Action = ActDisconn;
                     PeticionDisconn.Param1 = index;
                     CRM_Message(NMM, SubM_Exec, &PeticionDisconn);
+                    DumpConnection(0xFF);
 
                 }
 
@@ -1873,7 +1884,8 @@ BOOL CRM_Optm_Int(void)
 #ifdef DATACLUSTERING
     learningTime++;
     if (learningTime == reinicioAtacantesTimeMax){
-        Printf("Se reinicia la tabla de atacantes\r\n");
+        Printf("Se reinicia la tabla de atacantes\r\n");        
+        RestoreConnTable(TablaConexionesInicial, 1);
         REPO_MSSG_RCVD PeticionRepoInitAtt;
         PeticionRepoInitAtt.Action = ActStr;
         PeticionRepoInitAtt.DataType = InitTAtt;
@@ -1898,6 +1910,8 @@ BOOL CRM_Optm_Int(void)
         PeticionRepoInitAtt.DataType = InitTAtt;
 
         CRM_Message(NMM, SubM_Repo, &PeticionRepoInitAtt);
+        SaveConnTable(TablaConexionesInicial);
+        DumpConnection(0xFF);
     }
             
     if (aprendizaje == 1){

@@ -136,6 +136,7 @@ BYTE MIWI868_canal_optimo_ext[CONNECTION_SIZE];
 BYTE MIWI2400_RSSI_optimo_ext[CONNECTION_SIZE];
 BYTE MIWI2400_canal_optimo_ext[CONNECTION_SIZE];
 
+
 BYTE CanalOptimo;
 radioInterface riCanalOptimo;
 

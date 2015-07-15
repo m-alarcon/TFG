@@ -43,6 +43,7 @@ radioInterface riData;
 BYTE canalCambio = 0;
 BYTE primeraVez = 0;
 BYTE BackupCanal;
+BYTE TablaConexionesInicial[MIWI_CONN_ENTRY_SIZE*CONNECTION_SIZE];
 
 void InitAppVariables() {
     //Si las hubiera...

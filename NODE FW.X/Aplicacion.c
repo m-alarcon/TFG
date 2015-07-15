@@ -44,6 +44,14 @@ void Enviar_Paquete_Datos_App(radioInterface ri, BYTE modo, BYTE *addr){
             //Printf("\r\nCapacidad libre del buffer de TX: ");
             //PrintDec(i);
             n_rtx++;
+            switch(ri){
+                case MIWI_0434:
+                    MIWI434_rtx[c] = n_rtx;
+                case MIWI_0868:
+                    MIWI868_rtx[c] = n_rtx;
+                case MIWI_2400:
+                    MIWI2400_rtx[c] = n_rtx;
+            }
             if(n_rtx >= maxRTxXDefecto){
                 Printf("\r\nSe ha alcanzado el numero maximo de retransmisiones, se descarta el paquete.");
                 switch(ri){
@@ -60,14 +68,6 @@ void Enviar_Paquete_Datos_App(radioInterface ri, BYTE modo, BYTE *addr){
         }
         else{
             Printf(" => OK");
-            switch(ri){
-                case MIWI_0434:
-                    MIWI434_rtx[c] = n_rtx;
-                case MIWI_0868:
-                    MIWI868_rtx[c] = n_rtx;
-                case MIWI_2400:
-                    MIWI2400_rtx[c] = n_rtx;
-            }
             break;  //TRANSMISION CORRECTA, SALE DEL BUCLE
         }
     }
@@ -75,15 +75,15 @@ void Enviar_Paquete_Datos_App(radioInterface ri, BYTE modo, BYTE *addr){
     }
 }
 
-void limpiaBufferRX(void){
+void limpiaBufferRX(radioInterface radio){
 
-    BYTE recibido = GetPayloadToRead(riActual);
+    BYTE recibido = GetPayloadToRead(radio);
     BYTE i;
     BYTE info;
     BYTE *data = &info;
     if (recibido != 0){
         for (i = 0; i < recibido; i++){
-            GetRXData(riActual, data);
+            GetRXData(radio, data);
         }
     }
 }
@@ -117,6 +117,22 @@ BOOL Proc_Buff(RECEIVED_MESSAGE *Buffer)
         PrintChar(err);
         return FALSE;
     }
+    
+#ifdef DATACLUSTERING
+    BYTE inNet = 0;
+    
+    for (i = 0; i < CONNECTION_SIZE; i++){                    
+        if(isSameAddress(Buffer->SourceAddress, ConnectionTable[i].Address)){
+            inNet = 1;
+            break;
+        }
+    }
+    
+    if (inNet == 0){
+        limpiaBufferRX(riData);
+        return FALSE;
+    }
+#endif
     
     for (i = 0; GetPayloadToRead(riData) > 0; i++) {
         BYTE * storeItHere = &(Buffer->Payload[i]);
