@@ -53,8 +53,8 @@
 //#define TEST4
 //#define TEST5
 //#define TEST6
-//#define GAMETHEORY
-#define DATACLUSTERING
+#define GAMETHEORY
+//#define DATACLUSTERING
 
 //----------------------------------------------------------------------------//
 //------ CONFIGURATION OF MIWI STACK AND MIWI TRANSCEIVERS FOR THE NODE ------//
@@ -172,13 +172,13 @@
          * size permitted. However, in order to report errors, this value is 
          * limited to 128.
          * It has to be pointed out that connection table has a deep impact on 
-         * memory usage. In order to keep the memory requirements low, use a 
+         * memory usage. In order to keep the memory requi rements low, use a 
          * small size for connection table. Also, stacks' tasks will last for 
          * more time if more connections are managed.
          * Recommended values go from 8 to 32, depending on application's needs 
          * and the network topology.
          **********************************************************************/
-        #define CONNECTION_SIZE     2
+        #define CONNECTION_SIZE     1
             #if CONNECTION_SIZE > 128   //Juan: limited by NodeHAL error codes.
                 #undef CONNECTION_SIZE
                 #define CONNECTION_SIZE 128

@@ -16,7 +16,7 @@
 #ifndef APLICACION_H
 #define	APLICACION_H
 
-
+BYTE VCCmssg;
 void limpiaBufferRX(radioInterface radio);
 
 #endif	/* APLICACION_H */

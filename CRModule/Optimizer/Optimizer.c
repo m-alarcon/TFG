@@ -24,6 +24,7 @@
  *****************************************************************************/
 #include "CRModule/Optimizer/Optimizer.h"
 #include "CRModule/Optimizer/ConfigOptimizer.h"
+#include "../NODE FW.X/Aplicacion.h"
 
 /*****************************************************************************/
 /*********************************VARIABLES***********************************/
@@ -76,6 +77,8 @@ extern radioInterface riActual;
 extern BYTE canalCambio;
 extern BYTE BackupCanal;
 extern radioInterface riData;
+BYTE num_rtx = 0;
+//extern BYTE VCCmssg;
 
 #if defined NODE_1
 BYTE EUINodoExt1[] = {EUI_0, EUI_1, EUI_2, EUI_3, EUI_4, EUI_5, EUI_6, 0x22};
@@ -393,7 +396,7 @@ NOACEPTA: //Si no queremos notifcar el no cambio comentariamos y dejaríamos solo
                 CRM_Message(NMM, SubM_Repo, &PeticionRepoRTx);
 
                 char traza[80];
-                sprintf(traza, "\r\nHa habido %d retransmisiones en el canal actual.\r\n", *(BYTE*)(PeticionRepoRTx.Param2));
+                sprintf(traza, "\r\nHa habido %d retransmisiones en el canal actual.\r\n", num_rtx);
                 Printf(traza);
                 
                 if(*(BOOL*)(Peticion->Param2) == FALSE){
@@ -407,7 +410,7 @@ NOACEPTA: //Si no queremos notifcar el no cambio comentariamos y dejaríamos solo
                     return FALSE;
                 }
                 
-                BOOL cambio = CRM_Optm_Calcular_Costes(*(BYTE*)(PeticionRepoRTx.Param2));
+                BOOL cambio = CRM_Optm_Calcular_Costes(num_rtx);
                 //Reinicio el numero de retransmisiones
                 REPO_MSSG_RCVD PeticionRepoResetRTx;
                 PeticionRepoResetRTx.Action = ActStr;
@@ -623,7 +626,9 @@ NOACEPTA: //Si no queremos notifcar el no cambio comentariamos y dejaríamos solo
                     }
                 } else {
                     //Se reinicia todo.                    
-                    
+#ifdef NODE_1
+                    SWDelay(1000);
+#endif                   
                     EstadoGT = Clear;
                     CHNG_MSSG_RCVD = 0;
                     inicioCambio = FALSE;
@@ -1032,6 +1037,8 @@ BOOL CRM_Optm_Init(void)
 #ifdef DATACLUSTERING
     SetTXPower(riActual, 0x00);
 #endif
+    
+    VCCmssg = 0;
     
     BYTE i;
     Cuentamseg = 0;//Ponemos el contador a 0.
@@ -1784,7 +1791,12 @@ BOOL CRM_Optm_Int(void)
    
     CRM_VCC_Mssg_Rcvd(&PeticionRecepcion); //Esto va a enviar o recibir los mensajes de VCC
         
-    if(WhichRIHasData() != 0){
+    while(GetPayloadToRead(MIWI_0434)){
+        Printf("Pasa por aqui.");
+        Recibir_info();
+    }
+    
+    if (WhichRIHasData() != 0){
         Recibir_info();
     }
     
@@ -1965,8 +1977,6 @@ BOOL CRM_Optm_Int(void)
         }
     }
        
-    if (EstadoGT == Clear){                        
-        //Pedir a repo el numero de retransmisiones en el canal actual
         BYTE BackupCanal = GetOpChannel(riActual);
         REPO_MSSG_RCVD PeticionRepoRTx;
         PeticionRepoRTx.Action = ActSndDta;
@@ -1974,21 +1984,33 @@ BOOL CRM_Optm_Int(void)
         PeticionRepoRTx.Param1 = &BackupCanal;
         PeticionRepoRTx.Transceiver = riActual;
 
-        CRM_Message(NMM, SubM_Repo, &PeticionRepoRTx);
-
-        inicioCambio = CRM_Optm_Calcular_Costes(*(BYTE*)(PeticionRepoRTx.Param2));
-        //Reinicio el numero de retransmisiones
+        CRM_Message(NMM, SubM_Repo, &PeticionRepoRTx);    
+        
+    if (EstadoGT == Clear && VCCmssg == 0){                        
+        //Pedir a repo el numero de retransmisiones en el canal actual        
+        
+        num_rtx = *(BYTE*)(PeticionRepoRTx.Param2);
+        
+        inicioCambio = CRM_Optm_Calcular_Costes(num_rtx);
+        //Reinicio el numero de retransmisiones        
         REPO_MSSG_RCVD PeticionRepoResetRTx;
         PeticionRepoResetRTx.Action = ActStr;
         PeticionRepoResetRTx.DataType = RstRTx;
         CRM_Message(NMM, SubM_Repo, &PeticionRepoResetRTx);
         if (inicioCambio){
+            char traza[80];
+            sprintf(traza, "\r\n\r\nHa habido %d retransmisiones en el canal actual.", num_rtx);
+            Printf(traza);            
             MSSG_PROC_OPTM = 1;
             OPTM_MSSG_RCVD PeticionInicioCambio;
             PeticionInicioCambio.Action = SubActCambio;
             PeticionInicioCambio.Transceiver = riActual;
             CRM_Optm_Cons(&PeticionInicioCambio);
         }            
+    } else {
+        VCCmssg = 0;
+        num_rtx = *(BYTE*)(PeticionRepoRTx.Param2);
+        CRM_VCC_Mssg_Rcvd(&PeticionRecepcion);
     }
 #endif    
         }
@@ -1999,6 +2021,7 @@ BOOL CRM_Optm_Int(void)
 
 BOOL CRM_Timer5_Int(void)
 {    
+    BYTE nodo = 0;
     BYTE delay = rand() % 100;//Si se quiere un tiempo fijo quitar rand y poner 0
     if(mseg<Periodo)
     {
@@ -2011,8 +2034,13 @@ BOOL CRM_Timer5_Int(void)
             mseg = 0;
 #if defined GAMETHEORY
             #if defined NODE_1
-            Enviar_Paquete_Datos_App(riActual, LONG_MIWI_ADDRMODE, &EUINodoExt1);
-            Enviar_Paquete_Datos_App(riActual, LONG_MIWI_ADDRMODE, &EUINodoExt2);
+//            if(nodo = 0){
+                Enviar_Paquete_Datos_App(riActual, LONG_MIWI_ADDRMODE, &EUINodoExt1);
+//                nodo = 1;
+//            } else {
+//                Enviar_Paquete_Datos_App(riActual, LONG_MIWI_ADDRMODE, &EUINodoExt2);
+//                nodo = 0;
+//            }
             #elif defined NODE_2
             Enviar_Paquete_Datos_App(riActual, LONG_MIWI_ADDRMODE, &EUINodoExt1);
             #elif defined NODE_3

@@ -1,4 +1,5 @@
 #include "Aplicacion.h"
+#include "CRModule/Repository/Repository.h"
 
 BYTE i, j;
 BYTE *beatles = "When I find myself in times of trouble, Mother Mary comes to me,"
@@ -98,6 +99,7 @@ BOOL Proc_Buff(RECEIVED_MESSAGE *Buffer)
     
     if(!GetPayloadToRead(riActual) && GetPayloadToRead(MIWI_0434)){
         riData = MIWI_0434;
+        VCCmssg = 1;
         Printf("\r\n//////Se ha recibido mensaje por VCC.");
     } else if(!GetPayloadToRead(MIWI_0434) && GetPayloadToRead(riActual)){
         riData = riActual;

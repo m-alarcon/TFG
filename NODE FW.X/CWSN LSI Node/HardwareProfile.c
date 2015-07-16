@@ -601,9 +601,9 @@ void __ISR(_TIMER_4_VECTOR, ipl3AUTO)RutinaOptimizer(void)
  ******************************************************************************/
 void __ISR(_TIMER_5_VECTOR, ipl1AUTO)IntTmp(void) {
 
+    mT5ClearIntFlag();
     CRM_Timer5_Int();
     
-    mT5ClearIntFlag();
 }
 
 void __ISR(_CHANGE_NOTICE_VECTOR, ipl6AUTO)IntCN(void)

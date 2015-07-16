@@ -38,7 +38,12 @@ BYTE powerStep1 = 32;
 BYTE ri_RI_MASK1 = MIWI_0434_RI_MASK;
 #endif
 
+#ifdef DATACLUSTERING
+radioInterface riActual = MIWI_2400;
+#endif
+#ifdef GAMETHEORY
 radioInterface riActual = MIWI_0868;
+#endif
 radioInterface riData;
 BYTE canalCambio = 0;
 BYTE primeraVez = 0;
