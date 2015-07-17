@@ -78,6 +78,7 @@ extern BYTE canalCambio;
 extern BYTE BackupCanal;
 extern radioInterface riData;
 BYTE num_rtx = 0;
+BYTE numNodosRed = CONNECTION_SIZE;
 //extern BYTE VCCmssg;
 
 #if defined NODE_1
@@ -1046,7 +1047,7 @@ BOOL CRM_Optm_Init(void)
     mseg = 0;
     Periodo = 1000;
     tiempoCambio = 0;
-    tiempoCambioPotTX = 60000;
+    tiempoCambioPotTX = 50000;
     tiempoCambioFrecPaquetes = 60000;
     learningTimeMax = AprendizajeMax;
     reinicioAtacantesTimeMax = ReinicioMax;
@@ -1717,19 +1718,49 @@ BOOL CRM_Optm_Detectar_Atacante(){
                     PeticionRepoTablaAtacantes.Param1 = &i;
                     CRM_Message(NMM, SubM_Repo, &PeticionRepoTablaAtacantes);
                     if (isSameAddress((*(at*)(PeticionRepoTablaAtacantes.Param2)).direccionAtacante, dirAtt) && isSameAddress((*(at*)PeticionRepoTablaAtacantes.Param2).direccionDetector, dirDet)){
-                        if((*(at*)(PeticionRepoTablaAtacantes.Param2)).esAtacante == 1){
+                        if((*(at*)(PeticionRepoTablaAtacantes.Param2)).esAtacante == 5){
                             Printf("\r\nYa habia detectado a ese como atacante.");
                             return FALSE;
                         } else {            
-                            (*(at*)PeticionRepoTablaAtacantes.Param2).esAtacante = 1;
+                            (*(at*)PeticionRepoTablaAtacantes.Param2).esAtacante++;
+                            char trazaAtt[80];
+                            sprintf(trazaAtt, "\r\nSe ha detectado como atacante %d veces.\r\n", (*(at*)PeticionRepoTablaAtacantes.Param2).esAtacante);
+                            Printf(trazaAtt);     
+                            
+                            if ((*(at*)(PeticionRepoTablaAtacantes.Param2)).esAtacante == 5){
+                                //Mando un mensaje por VCC al resto de nodos con la informacion del atacante.
+                                Printf("\r\nMando informacion del atacante y el detector al resto de nodos.");
+                                BYTE MensajeVCC[] = {VccCtrlMssg, SubM_Repo, ActStr, DetAtt, 0, dirAtt[0], dirAtt[1], 
+                                                    dirAtt[2], dirAtt[3], dirAtt[4], dirAtt[5], dirAtt[6], dirAtt[7], 
+                                                    dirDet[0], dirDet[1], dirDet[2], dirDet[3], dirDet[4], dirDet[5], 
+                                                    dirDet[6], dirDet[7], riActual};
+                                MSN_MSSG_RCVD PeticionAtacante;
+                                VCC_MSSG_RCVD PeticionVCCAtacante;
+
+                                PeticionVCCAtacante.AddrMode = BROADCAST_ADDRMODE;
+                                PeticionVCCAtacante.Action = ActSend;
+                                PeticionVCCAtacante.BufferVCC = MensajeVCC;
+                                PeticionVCCAtacante.Transceiver = MIWI_0434;
+                                BYTE sizeBufferVCC = 22;
+                                PeticionVCCAtacante.Param1 = &sizeBufferVCC;
+
+                                PeticionAtacante.Peticion_Destino.PeticionVCC = &PeticionVCCAtacante;
+
+                                CRM_Message(VCC, SubM_Ext, &PeticionAtacante);   
+
+                            }
                         }
                     }
-                    if (isSameAddress((*(at*)(PeticionRepoTablaAtacantes.Param2)).direccionAtacante, dirAtt) && (*(at*)(PeticionRepoTablaAtacantes.Param2)).esAtacante == 1){
-                        nDetectado++;
+                    if (isSameAddress((*(at*)(PeticionRepoTablaAtacantes.Param2)).direccionAtacante, dirAtt) && (*(at*)(PeticionRepoTablaAtacantes.Param2)).esAtacante != 0){
+                        if (isSameAddress((*(at*)(PeticionRepoTablaAtacantes.Param2)).direccionDetector, myLongAddress) && (*(at*)(PeticionRepoTablaAtacantes.Param2)).esAtacante == 5){
+                            nDetectado++;
+                        } else if (!isSameAddress((*(at*)(PeticionRepoTablaAtacantes.Param2)).direccionDetector, myLongAddress) && (*(at*)(PeticionRepoTablaAtacantes.Param2)).esAtacante == 1){
+                            nDetectado++;
+                        }
                     }        
                 }
 
-                if (nDetectado >= 2){
+                if (nDetectado >= 1){
                     Printf("\r\nVarios nodos han detectado al mismo atacante. Se desconecta de la red.");
                     //Se desconecta a ese de la red.
                     //Se puede hacer cualquier otra cosa.
@@ -1739,35 +1770,15 @@ BOOL CRM_Optm_Detectar_Atacante(){
                     for (i = 0; i < CONNECTION_SIZE; i++){                    
                         if(isSameAddress(dirAtt, ConnectionTable[i].Address)){
                             index = i;
+                            EXEC_MSSG_RCVD PeticionDisconn;
+                            PeticionDisconn.Action = ActDisconn;
+                            PeticionDisconn.Param1 = index;
+                            CRM_Message(NMM, SubM_Exec, &PeticionDisconn);
+                            DumpConnection(0xFF);                            
                         }
-                    }
-                    EXEC_MSSG_RCVD PeticionDisconn;
-                    PeticionDisconn.Action = ActDisconn;
-                    PeticionDisconn.Param1 = index;
-                    CRM_Message(NMM, SubM_Exec, &PeticionDisconn);
-                    DumpConnection(0xFF);
+                    }                                   
 
                 }
-
-                //Mando un mensaje por VCC al resto de nodos con la informacion del atacante.
-                Printf("\r\nMando información del atacante y el detector al resto de nodos.");
-                BYTE MensajeVCC[] = {VccCtrlMssg, SubM_Repo, ActStr, DetAtt, 0, dirAtt[0], dirAtt[1], 
-                                    dirAtt[2], dirAtt[3], dirAtt[4], dirAtt[5], dirAtt[6], dirAtt[7], 
-                                    dirDet[0], dirDet[1], dirDet[2], dirDet[3], dirDet[4], dirDet[5], 
-                                    dirDet[6], dirDet[7], riActual};
-                MSN_MSSG_RCVD PeticionAtacante;
-                VCC_MSSG_RCVD PeticionVCCAtacante;
-
-                PeticionVCCAtacante.AddrMode = BROADCAST_ADDRMODE;
-                PeticionVCCAtacante.Action = ActSend;
-                PeticionVCCAtacante.BufferVCC = MensajeVCC;
-                PeticionVCCAtacante.Transceiver = MIWI_0434;
-                BYTE sizeBufferVCC = 22;
-                PeticionVCCAtacante.Param1 = &sizeBufferVCC;
-
-                PeticionAtacante.Peticion_Destino.PeticionVCC = &PeticionVCCAtacante;
-
-                CRM_Message(VCC, SubM_Ext, &PeticionAtacante);
                 
                 return TRUE;
             } else {
@@ -1792,7 +1803,6 @@ BOOL CRM_Optm_Int(void)
     CRM_VCC_Mssg_Rcvd(&PeticionRecepcion); //Esto va a enviar o recibir los mensajes de VCC
         
     while(GetPayloadToRead(MIWI_0434)){
-        Printf("Pasa por aqui.");
         Recibir_info();
     }
     
@@ -1898,6 +1908,7 @@ BOOL CRM_Optm_Int(void)
     if (learningTime == reinicioAtacantesTimeMax){
         Printf("Se reinicia la tabla de atacantes\r\n");        
         RestoreConnTable(TablaConexionesInicial, 1);
+        DumpConnection(0xFF);
         REPO_MSSG_RCVD PeticionRepoInitAtt;
         PeticionRepoInitAtt.Action = ActStr;
         PeticionRepoInitAtt.DataType = InitTAtt;
@@ -1906,7 +1917,7 @@ BOOL CRM_Optm_Int(void)
         learningTime = 0;
     }
     //Esto lo tiene que hacer hasta que se termine el tiempo de aprendizaje
-    if(GetPayloadToRead(riActual) != 0 && learningTime < learningTimeMax && MSSG_PROC_OPTM == 0){
+    if(GetPayloadToRead(riActual) != 0 && learningTime < learningTimeMax && MSSG_PROC_OPTM == 0 && aprendizaje == 0){
         if(!primera){
             primera = 1;
             learningTime = 0;
@@ -1915,7 +1926,7 @@ BOOL CRM_Optm_Int(void)
         
         CRM_Optm_Calculo_Coordenadas();
         
-    } else if (learningTime == learningTimeMax){
+    } else if (learningTime == learningTimeMax && aprendizaje == 0){
         aprendizaje = 1;
         REPO_MSSG_RCVD PeticionRepoInitAtt;
         PeticionRepoInitAtt.Action = ActStr;
@@ -2021,6 +2032,7 @@ BOOL CRM_Optm_Int(void)
 
 BOOL CRM_Timer5_Int(void)
 {    
+    BYTE i;
     BYTE nodo = 0;
     BYTE delay = rand() % 100;//Si se quiere un tiempo fijo quitar rand y poner 0
     if(mseg<Periodo)
@@ -2048,7 +2060,11 @@ BOOL CRM_Timer5_Int(void)
             #endif
 #endif
 #ifdef DATACLUSTERING
-    Enviar_Paquete_Datos_App(riActual, BROADCAST_ADDRMODE, &EUINodoExt1);
+            for (i = 0; i < numNodosRed; i++){
+                if(isSameAddress(ConnectionTable[i].Address, EUINodoExt1)){
+                    Enviar_Paquete_Datos_App(riActual, LONG_MIWI_ADDRMODE, &EUINodoExt1);
+                }
+            }
 #endif
         }
     }

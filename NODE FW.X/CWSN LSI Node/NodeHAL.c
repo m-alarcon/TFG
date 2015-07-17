@@ -2721,7 +2721,7 @@ BYTE SendPckt(radioInterface ri, BYTE AddrMode, BYTE *Address){
                 //Try to send a MiWi packet with the stored data in 2,4 GHz band
                 aux = SendMIWI(ISM_2G4, isBroadcast, Address, isLongAddr);
                 if(aux == NO_ERROR){
-                    Printf("\r\nSuccessful 2,4 GHz transmission. Data discarded.");
+                    //Printf("\r\nSuccessful 2,4 GHz transmission. Data discarded.");
                     MIWI2400_sentPckts++;   //Update statistics.
 
                     return DiscardTXData(ri);   //Discard successfully sent pckt

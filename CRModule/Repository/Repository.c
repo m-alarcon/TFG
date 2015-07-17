@@ -657,7 +657,7 @@ BOOL CRM_Repo_Proc_Mens_Att(REPO_MSSG_RCVD *Peticion){
     
     for (i = 0; i < (CONNECTION_SIZE+1)*(CONNECTION_SIZE+1); i++){
         if (isSameAddress(Tabla_Atacantes[i].direccionAtacante, dirAtt) && isSameAddress(Tabla_Atacantes[i].direccionDetector, dirDet)){
-            if(Tabla_Atacantes[i].esAtacante == 1){
+            if(Tabla_Atacantes[i].esAtacante != 0){
                 Printf("\r\nYa habia recibido ese mensaje.");
                 return FALSE;
             } else {            
@@ -683,12 +683,16 @@ BOOL CRM_Repo_Proc_Mens_Att(REPO_MSSG_RCVD *Peticion){
                 CRM_Message(VCC, SubM_Ext, &PeticionAtacante);                
             }
         }
-        if (isSameAddress(Tabla_Atacantes[i].direccionAtacante, dirAtt) && Tabla_Atacantes[i].esAtacante == 1){
-            nDetectado++;            
+        if (isSameAddress(Tabla_Atacantes[i].direccionAtacante, dirAtt) && Tabla_Atacantes[i].esAtacante != 0){
+            if (isSameAddress(Tabla_Atacantes[i].direccionDetector, myLongAddress) && Tabla_Atacantes[i].esAtacante == 5){
+                nDetectado++;
+            } else if (Tabla_Atacantes[i].esAtacante == 1){
+                nDetectado++;
+            }
         }        
     }
 
-    if (nDetectado >= 2){
+    if (nDetectado >= 1){
         Printf("\r\nVarios nodos han detectado al mismo atacante. Se desconecta de la red.");
         //Se desconecta a ese de la red.
         //Se puede hacer cualquier otra cosa.
@@ -698,13 +702,14 @@ BOOL CRM_Repo_Proc_Mens_Att(REPO_MSSG_RCVD *Peticion){
         for (i = 0; i < CONNECTION_SIZE; i++){
             if(isSameAddress(dirAtt, ConnectionTable[i].Address)){
                 index = i;
+                EXEC_MSSG_RCVD PeticionDisconn;
+                PeticionDisconn.Action = ActDisconn;
+                PeticionDisconn.Param1 = index;
+                CRM_Message(NMM, SubM_Exec, &PeticionDisconn);
+                DumpConnection(0xFF);                
             }
         }
-        EXEC_MSSG_RCVD PeticionDisconn;
-        PeticionDisconn.Action = ActDisconn;
-        PeticionDisconn.Param1 = index;
-        CRM_Message(NMM, SubM_Exec, &PeticionDisconn);
-        DumpConnection(0xFF);
+        
         
     }
     //Guardo en la tabla quién es el atacante
