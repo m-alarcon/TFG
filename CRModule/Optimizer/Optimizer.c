@@ -77,8 +77,8 @@ extern radioInterface riActual;
 extern BYTE canalCambio;
 extern BYTE BackupCanal;
 extern radioInterface riData;
-BYTE num_rtx = 0;
-BYTE numNodosRed = CONNECTION_SIZE;
+BYTE num_rtx;
+BYTE numNodosRed;
 //extern BYTE VCCmssg;
 
 #if defined NODE_1
@@ -137,6 +137,8 @@ BYTE EUINodoExt2[] = {EUI_0, EUI_1, EUI_2, EUI_3, EUI_4, EUI_5, EUI_6, 0x22};
     int paquetesRecibidos;
     int nClusters = 0;
     cl cluster;
+    
+    LONG tiempo;
 
 /*****************************************************************************/
 /******************************FIN DE VARIABLES*******************************/
@@ -384,17 +386,19 @@ NOACEPTA: //Si no queremos notifcar el no cambio comentariamos y dejaríamos solo
         case ProcCambioCanal:
         {
             CHNG_MSSG_RCVD = 1;
-            if(EstadoGT == Clear){
+            if(EstadoGT == Clear){                
                 Printf("\r\nSe ha recibido peticion de cambio de canal del otro nodo.");
                 nRespuestasAfirmativas++;
                 REPO_MSSG_RCVD PeticionRepoRTx;
-                BYTE canal = GetOpChannel(Peticion->Transceiver);
+                BYTE canal = GetOpChannel(riActual);
                 PeticionRepoRTx.Action = ActSndDta;
                 PeticionRepoRTx.DataType = EnvRTx;
                 PeticionRepoRTx.Param1 = &canal;
-                PeticionRepoRTx.Transceiver = Peticion->Transceiver;
+                PeticionRepoRTx.Transceiver = riActual;
 
                 CRM_Message(NMM, SubM_Repo, &PeticionRepoRTx);
+                
+                num_rtx = *(BYTE*)(PeticionRepoRTx.Param2);
 
                 char traza[80];
                 sprintf(traza, "\r\nHa habido %d retransmisiones en el canal actual.\r\n", num_rtx);
@@ -402,6 +406,7 @@ NOACEPTA: //Si no queremos notifcar el no cambio comentariamos y dejaríamos solo
                 
                 if(*(BOOL*)(Peticion->Param2) == FALSE){
                     Printf("\r\nEra una respuesta que ya se habia procesado.");
+
                     EstadoGT = Clear;
                     CHNG_MSSG_RCVD = 0;
                     inicioCambio = FALSE;
@@ -513,7 +518,7 @@ NOACEPTA: //Si no queremos notifcar el no cambio comentariamos y dejaríamos solo
                         PeticionCambioCanal.Peticion_Destino.PeticionVCC = &PeticionVCCCambioCanal;
 
                         CRM_Message(VCC, SubM_Ext, &PeticionCambioCanal);
-                                                
+                                            
                         EstadoGT = Clear;
                         CHNG_MSSG_RCVD = 0;
                         inicioCambio = FALSE;
@@ -626,10 +631,7 @@ NOACEPTA: //Si no queremos notifcar el no cambio comentariamos y dejaríamos solo
                         nRespuestasNegativas = 0;
                     }
                 } else {
-                    //Se reinicia todo.                    
-#ifdef NODE_1
-                    SWDelay(1000);
-#endif                   
+                    //Se reinicia todo.      
                     EstadoGT = Clear;
                     CHNG_MSSG_RCVD = 0;
                     inicioCambio = FALSE;
@@ -695,6 +697,7 @@ NOACEPTA: //Si no queremos notifcar el no cambio comentariamos y dejaríamos solo
                     PeticionRepoCanales.Param2 = &position;            
                     CRM_Message(NMM, SubM_Repo, &PeticionRepoCanales);//Peticion cuarto mejor canal.
                     CuartoCanal = *(BYTE*)(PeticionRepoCanales.Param3);
+                    BYTE RSSIcuarto = *(BYTE*)(PeticionRepoCanales.Param4);
                     
                     char trazaCanales[80];
                     sprintf(trazaCanales, "\r\nLos canales mejores para mi son: el %d, el %d, el %d y el %d.\r\n", MejorCanal, SegundoCanal, TercerCanal, CuartoCanal);
@@ -703,10 +706,24 @@ NOACEPTA: //Si no queremos notifcar el no cambio comentariamos y dejaríamos solo
                     if(MejorCanal == CanalOtroNodo || SegundoCanal == CanalOtroNodo || TercerCanal == CanalOtroNodo || CuartoCanal == CanalOtroNodo){
                         cambio = TRUE;
                     } else {
-                        BYTE diff = (RSSICanalOtroNodo - *(BYTE*)(PeticionRepoCanales.Param4)); 
+                        Printf("\r\nEl canal del otro nodo no esta entre mis mejores. Comparo el RSSI del canal al que quiere cambiar con el de mi ultimo mejor.");
+                        REPO_MSSG_RCVD PeticionRepoRSSICanal;
+                        PeticionRepoRSSICanal.Action = ActSndDta;
+                        PeticionRepoRSSICanal.Transceiver = ri;
+                        PeticionRepoRSSICanal.DataType = EnvRSSICh;
+                        PeticionRepoRSSICanal.Param1 = &ri;                      
+                        PeticionRepoRSSICanal.Param2 = &CanalOtroNodo;            
+                        CRM_Message(NMM, SubM_Repo, &PeticionRepoCanales);//Peticion cuarto mejor canal.
+                        BYTE RSSICanalOtroNodo = *(BYTE*)(PeticionRepoCanales.Param3);                        
+                        BYTE diff = (RSSICanalOtroNodo - RSSIcuarto);
+                        char trazaCanales[80];
+                        sprintf(trazaCanales, "\r\nEl RSSI del canal del otro nodo y el del ultimo mejor mio es: %d, %d.\r\n", RSSICanalOtroNodo, *(BYTE*)(PeticionRepoCanales.Param4));
+                        Printf(trazaCanales);
                         if(diff < 0x05){
+                            Printf("\r\nEstan muy proximos se acepta el cambio.");
                             cambio = TRUE;
                         } else {
+                            Printf("\r\nNo estan proximos se rechaza el canal.");
                             cambio = FALSE;
                         }
                     } 
@@ -735,7 +752,7 @@ NOACEPTA: //Si no queremos notifcar el no cambio comentariamos y dejaríamos solo
                         EstadoGT = EsperandoDecFinal;
                     } else {
                         //Cambio de canal, aviso al resto.
-                        Printf("\r\nNo quiero cambiar al canal que me dice. Le digo que no me quiero cambiar a ese y si es el último nodo por contestar me cambio.");
+                        Printf("\r\nNo quiero cambiar al canal que me dice. Le digo que no me quiero cambiar a ese y si es el ultimo nodo por contestar me cambio.");
                         
                         BYTE MensajeVCC[] = {VccCtrlMssg, SubM_Opt, ActProcRq, ProcDecFinal, FALSE, Peticion->Transceiver};
                         MSN_MSSG_RCVD PeticionCambioCanal;
@@ -1035,12 +1052,10 @@ BOOL CRM_Optm_CostAlgorithm(INPUT BYTE CosteNotChanging , INPUT BYTE CosteOcup, 
 /*Funciones de inicializacion*/
 BOOL CRM_Optm_Init(void)
 {
-#ifdef DATACLUSTERING
     SetTXPower(riActual, 0x00);
-#endif
     
-    VCCmssg = 0;
-    
+    numNodosRed = CONNECTION_SIZE;
+    num_rtx = 0;
     BYTE i;
     Cuentamseg = 0;//Ponemos el contador a 0.
     Periodomseg = PeriodoXDefecto;
@@ -1054,6 +1069,8 @@ BOOL CRM_Optm_Init(void)
     
     TiempoAnterior = MiWi_TickGet();
     paquetesRecibidos = 0;
+    
+    tiempo = 0;
     //TODO la inicializacion.
     //Ini de las estrategias de optimizacion.
     //La de coste de cambio de canal.
@@ -1774,6 +1791,7 @@ BOOL CRM_Optm_Detectar_Atacante(){
                             PeticionDisconn.Action = ActDisconn;
                             PeticionDisconn.Param1 = index;
                             CRM_Message(NMM, SubM_Exec, &PeticionDisconn);
+                            numNodosRed--;
                             DumpConnection(0xFF);                            
                         }
                     }                                   
@@ -1794,21 +1812,30 @@ BOOL CRM_Optm_Detectar_Atacante(){
  funcion de la prioridad que tengan).*/
 BOOL CRM_Optm_Int(void)
 {
-
+    tiempo++;
 #if defined(TEST5)
     t1G = MiWi_TickGet(); //Cada vez que entra se guarda en t1 el tiempo.
 #endif
 //    if(!RecibiendoMssg && !EnviandoMssgApp)
-   
-    CRM_VCC_Mssg_Rcvd(&PeticionRecepcion); //Esto va a enviar o recibir los mensajes de VCC
-        
+#ifdef DATACLUSTERING
+    BYTE i;
+    for (i = 0; i < numNodosRed; i++){
+        if(isSameAddress(ConnectionTable[i].Address, EUINodoExt1)){
+#endif
     while(GetPayloadToRead(MIWI_0434)){
         Recibir_info();
     }
     
     if (WhichRIHasData() != 0){
         Recibir_info();
+    }    
+    
+#ifdef DATACLUSTERING
+        }
     }
+#endif        
+        
+    CRM_VCC_Mssg_Rcvd(&PeticionRecepcion); //Esto va a enviar o recibir los mensajes de VCC
     
 #if defined TEST6
 #if defined (NODE_1)//NodoEmisor)
@@ -1987,7 +2014,10 @@ BOOL CRM_Optm_Int(void)
             CRM_Message(NMM, SubM_Repo, &PeticionRepoMssg);
         }
     }
-       
+           
+        
+    if (EstadoGT == Clear){                        
+        //Pedir a repo el numero de retransmisiones en el canal actual        
         BYTE BackupCanal = GetOpChannel(riActual);
         REPO_MSSG_RCVD PeticionRepoRTx;
         PeticionRepoRTx.Action = ActSndDta;
@@ -1995,11 +2025,7 @@ BOOL CRM_Optm_Int(void)
         PeticionRepoRTx.Param1 = &BackupCanal;
         PeticionRepoRTx.Transceiver = riActual;
 
-        CRM_Message(NMM, SubM_Repo, &PeticionRepoRTx);    
-        
-    if (EstadoGT == Clear && VCCmssg == 0){                        
-        //Pedir a repo el numero de retransmisiones en el canal actual        
-        
+        CRM_Message(NMM, SubM_Repo, &PeticionRepoRTx);        
         num_rtx = *(BYTE*)(PeticionRepoRTx.Param2);
         
         inicioCambio = CRM_Optm_Calcular_Costes(num_rtx);
@@ -2008,7 +2034,7 @@ BOOL CRM_Optm_Int(void)
         PeticionRepoResetRTx.Action = ActStr;
         PeticionRepoResetRTx.DataType = RstRTx;
         CRM_Message(NMM, SubM_Repo, &PeticionRepoResetRTx);
-        if (inicioCambio){
+        if (inicioCambio){           
             char traza[80];
             sprintf(traza, "\r\n\r\nHa habido %d retransmisiones en el canal actual.", num_rtx);
             Printf(traza);            
@@ -2018,14 +2044,9 @@ BOOL CRM_Optm_Int(void)
             PeticionInicioCambio.Transceiver = riActual;
             CRM_Optm_Cons(&PeticionInicioCambio);
         }            
-    } else {
-        VCCmssg = 0;
-        num_rtx = *(BYTE*)(PeticionRepoRTx.Param2);
-        CRM_VCC_Mssg_Rcvd(&PeticionRecepcion);
     }
 #endif    
         }
-
     }
     return FALSE;
 }
@@ -2074,20 +2095,20 @@ BOOL CRM_Timer5_Int(void)
         tiempoCambio++;
     } else if(tiempoCambio==tiempoCambioPotTX) {
         SetTXPower(riActual, 0xFF);
+        Periodo = 250;
         Printf("\r\n/////////////////////////////////Se cambia la potencia de transmision.");
         tiempoCambio = tiempoCambioPotTX+100; //Para que no siga sumando ni cambiando la potencia
     }
-    #endif
 
-    /*#ifdef NODE_2
     if(tiempoCambio<tiempoCambioFrecPaquetes) {
         tiempoCambio++;
     } else if(tiempoCambio==tiempoCambioFrecPaquetes) {
-        Periodo = 500;
+        
         Printf("\r\nSe cambia el tiempo entre paquetes.");
         tiempoCambio = tiempoCambioFrecPaquetes+100;
     }
-    #endif*/
+    
+    #endif
     
 }
 

@@ -47,7 +47,7 @@ typedef enum _REPACTION
 
 typedef enum _REPODATATYPE
 {
-    OwnNode = 0x01, NetNode, EnvNode, Enviro, EnvPotencias, IncluirPotencia, AddMsg, EnvRTx, EnvNMsg, EnvRSSI, EnvListaPaq, EnvListaCl, EnvTablaAt, SaveRSSI, RstRSSI, RstRTx, AddCoord, DetAtt, InitTAtt, AllInfo = 0x10
+    OwnNode = 0x01, NetNode, EnvNode, Enviro, EnvPotencias, IncluirPotencia, AddMsg, EnvRTx, EnvNMsg, EnvRSSI, EnvRSSICh, EnvListaPaq, EnvListaCl, EnvTablaAt, SaveRSSI, RstRSSI, RstRTx, AddCoord, DetAtt, InitTAtt, AllInfo = 0x10
 } REPODATATYPE;
 
 /*Los sub-tipos de datos para cada tipo de dato*/

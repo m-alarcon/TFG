@@ -48,20 +48,26 @@ void Enviar_Paquete_Datos_App(radioInterface ri, BYTE modo, BYTE *addr){
             switch(ri){
                 case MIWI_0434:
                     MIWI434_rtx[c] = n_rtx;
+                    break;
                 case MIWI_0868:
                     MIWI868_rtx[c] = n_rtx;
+                    break;
                 case MIWI_2400:
                     MIWI2400_rtx[c] = n_rtx;
+                    break;
             }
             if(n_rtx >= maxRTxXDefecto){
                 Printf("\r\nSe ha alcanzado el numero maximo de retransmisiones, se descarta el paquete.");
                 switch(ri){
                     case MIWI_0434:
                         MIWI434_rtx[c] = maxRTxXDefecto;
+                        break;
                     case MIWI_0868:
                         MIWI868_rtx[c] = maxRTxXDefecto;
+                        break;
                     case MIWI_2400:
                         MIWI2400_rtx[c] = maxRTxXDefecto;
+                        break;
                 }
                 DiscardTXData(ri);
                 break;
@@ -99,7 +105,6 @@ BOOL Proc_Buff(RECEIVED_MESSAGE *Buffer)
     
     if(!GetPayloadToRead(riActual) && GetPayloadToRead(MIWI_0434)){
         riData = MIWI_0434;
-        VCCmssg = 1;
         Printf("\r\n//////Se ha recibido mensaje por VCC.");
     } else if(!GetPayloadToRead(MIWI_0434) && GetPayloadToRead(riActual)){
         riData = riActual;

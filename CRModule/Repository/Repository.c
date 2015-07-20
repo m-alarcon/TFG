@@ -233,6 +233,18 @@ BOOL CRM_Repo_SendDat(REPO_MSSG_RCVD *Peticion)
             Peticion->Param4 = &array[*(BYTE*)(Peticion->Param2)];
             break;
         }
+        case EnvRSSICh:
+        {
+            switch(*(radioInterface*)(Peticion->Param1)){
+                case MIWI_0868:
+                    Peticion->Param3 = &MIWI868_RSSI_values[*(BYTE*)(Peticion->Param2)];                
+                    break;
+                case MIWI_2400:            
+                    Peticion->Param3 = &MIWI2400_RSSI_values[*(BYTE*)(Peticion->Param2)];              
+                    break;             
+            }                
+            break;
+        }
         case EnvListaPaq:
             Peticion->Param2 = &Lista_Paq_Rec_Aprendizaje[*(BYTE*)(Peticion->Param1)];
             break;
