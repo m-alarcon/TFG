@@ -43,7 +43,7 @@
 #define CosteSensingXDefecto 180
 #define numMsjXDefecto 100
 #define AprendizajeMax 600
-#define ReinicioMax 6000
+#define ReinicioMax 1000
 #define PorcentajeMinimo 10
 #if defined(MRF49XA) || defined(MRF49XA_alt)
     #define maxRTxXDefecto RETRANSMISSION_TIMES

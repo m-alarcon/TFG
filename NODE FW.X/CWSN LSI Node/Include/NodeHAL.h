@@ -210,6 +210,8 @@ typedef struct{
     #endif
 } nodeStatus;
 
+nodeStatus NodeStatus;
+
 ////Define a header structure for validating the AppConfig data structure in EEPROM/Flash
 //typedef struct {
 //    unsigned short wConfigurationLength;

@@ -118,7 +118,7 @@
 
 /* VARIABLES ******************************************************************/
 //HAL
-nodeStatus NodeStatus;
+
 UINT32 SleepEventCounter;
 //unsigned int coreTMRvals[11];
 BYTE coreTMRptr;

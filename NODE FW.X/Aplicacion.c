@@ -1,6 +1,6 @@
 #include "Aplicacion.h"
 #include "CRModule/Repository/Repository.h"
-
+#include "NodeHAL.h"
 BYTE i, j;
 BYTE *beatles = "When I find myself in times of trouble, Mother Mary comes to me,"
             " speaking words of wisdom, let it be. And in my hour of darkness"
@@ -84,13 +84,15 @@ void Enviar_Paquete_Datos_App(radioInterface ri, BYTE modo, BYTE *addr){
 
 void limpiaBufferRX(radioInterface radio){
 
-    BYTE recibido = GetPayloadToRead(radio);
-    BYTE i;
-    BYTE info;
-    BYTE *data = &info;
-    if (recibido != 0){
-        for (i = 0; i < recibido; i++){
-            GetRXData(radio, data);
+    while(NodeStatus.MIWI2400_RXbuf_isEmpty == FALSE){
+        BYTE recibido = GetPayloadToRead(radio);
+        BYTE i;
+        BYTE info;
+        BYTE *data = &info;
+        if (recibido != 0){
+            for (i = 0; i < recibido; i++){
+                GetRXData(radio, data);
+            }
         }
     }
 }

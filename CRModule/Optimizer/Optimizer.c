@@ -79,6 +79,7 @@ extern BYTE BackupCanal;
 extern radioInterface riData;
 BYTE num_rtx;
 BYTE numNodosRed;
+BYTE cambioPot;
 //extern BYTE VCCmssg;
 
 #if defined NODE_1
@@ -131,7 +132,7 @@ BYTE EUINodoExt2[] = {EUI_0, EUI_1, EUI_2, EUI_3, EUI_4, EUI_5, EUI_6, 0x22};
     BYTE clustersDone;
     
     MIWI_TICK TiempoAnterior;
-    double initRad = 0.3;
+    double initRad = 0.05;
     double tiempoMax;
     double potenciaMax;
     int paquetesRecibidos;
@@ -1062,11 +1063,11 @@ BOOL CRM_Optm_Init(void)
     mseg = 0;
     Periodo = 1000;
     tiempoCambio = 0;
-    tiempoCambioPotTX = 50000;
-    tiempoCambioFrecPaquetes = 60000;
+    tiempoCambioPotTX = 700;
+    tiempoCambioFrecPaquetes = 700;
     learningTimeMax = AprendizajeMax;
     reinicioAtacantesTimeMax = ReinicioMax;
-    
+    cambioPot = 0;
     TiempoAnterior = MiWi_TickGet();
     paquetesRecibidos = 0;
     
@@ -1822,10 +1823,11 @@ BOOL CRM_Optm_Int(void)
     for (i = 0; i < numNodosRed; i++){
         if(isSameAddress(ConnectionTable[i].Address, EUINodoExt1)){
 #endif
+            /*
     while(GetPayloadToRead(MIWI_0434)){
         Recibir_info();
     }
-    
+    */
     if (WhichRIHasData() != 0){
         Recibir_info();
     }    
@@ -1933,16 +1935,28 @@ BOOL CRM_Optm_Int(void)
 #ifdef DATACLUSTERING
     learningTime++;
     if (learningTime == reinicioAtacantesTimeMax){
-        Printf("Se reinicia la tabla de atacantes\r\n");        
+        Printf("\r\nSe reinicia la tabla de atacantes\r\n");        
         RestoreConnTable(TablaConexionesInicial, 1);
         DumpConnection(0xFF);
+        
         REPO_MSSG_RCVD PeticionRepoInitAtt;
         PeticionRepoInitAtt.Action = ActStr;
         PeticionRepoInitAtt.DataType = InitTAtt;
 
         CRM_Message(NMM, SubM_Repo, &PeticionRepoInitAtt);
+        limpiaBufferRX(riActual);
+        numNodosRed = CONNECTION_SIZE;
         learningTime = 0;
     }
+#ifdef NODE_1
+    if(learningTime == tiempoCambioPotTX && cambioPot == 0) {
+        SetTXPower(riActual, 0xFF);
+        //Periodo = 200;
+        Printf("\r\n/////////////////////////////////Se cambia la potencia de transmision.");
+        cambioPot = 1;
+        //tiempoCambio = tiempoCambioPotTX+100; //Para que no siga sumando ni cambiando la potencia
+    }    
+#endif
     //Esto lo tiene que hacer hasta que se termine el tiempo de aprendizaje
     if(GetPayloadToRead(riActual) != 0 && learningTime < learningTimeMax && MSSG_PROC_OPTM == 0 && aprendizaje == 0){
         if(!primera){
@@ -1962,16 +1976,11 @@ BOOL CRM_Optm_Int(void)
         CRM_Message(NMM, SubM_Repo, &PeticionRepoInitAtt);
         SaveConnTable(TablaConexionesInicial);
         DumpConnection(0xFF);
+        SWDelay(100);
     }
             
     if (aprendizaje == 1){
         if(normalizado == 0) {
-            REPO_MSSG_RCVD PeticionRepoLista;
-            PeticionRepoLista.Action = ActSndDta;
-            PeticionRepoLista.DataType = EnvListaPaq;
-
-            CRM_Message(NMM, SubM_Repo, &PeticionRepoLista);
-            
             CRM_Optm_Normalizar_Coordenadas();
             normalizado = 1;
         } else if (normalizado == 1 && clustersDone == 0) {
@@ -2054,9 +2063,8 @@ BOOL CRM_Optm_Int(void)
 BOOL CRM_Timer5_Int(void)
 {    
     BYTE i;
-    BYTE nodo = 0;
     BYTE delay = rand() % 100;//Si se quiere un tiempo fijo quitar rand y poner 0
-    if(mseg<Periodo)
+    if(mseg<(Periodo+delay))
     {
         mseg++;
     }
@@ -2089,13 +2097,13 @@ BOOL CRM_Timer5_Int(void)
 #endif
         }
     }
-    
+    /*
     #ifdef NODE_1    
     if(tiempoCambio<tiempoCambioPotTX) {
         tiempoCambio++;
     } else if(tiempoCambio==tiempoCambioPotTX) {
         SetTXPower(riActual, 0xFF);
-        Periodo = 250;
+        //Periodo = 250;
         Printf("\r\n/////////////////////////////////Se cambia la potencia de transmision.");
         tiempoCambio = tiempoCambioPotTX+100; //Para que no siga sumando ni cambiando la potencia
     }
@@ -2107,9 +2115,9 @@ BOOL CRM_Timer5_Int(void)
         Printf("\r\nSe cambia el tiempo entre paquetes.");
         tiempoCambio = tiempoCambioFrecPaquetes+100;
     }
-    
+  
     #endif
-    
+    */
 }
 
 #if defined TEST3

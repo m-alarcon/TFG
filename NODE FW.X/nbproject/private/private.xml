@@ -5,9 +5,11 @@
     <open-files xmlns="http://www.netbeans.org/ns/projectui-open-files/2">
         <group>
             <file>file:/C:/Users/Manuel/Documents/TFG/NODE%20FW.X/CWSN%20LSI%20Node/Include/WirelessProtocols/ConfigApp.h</file>
+            <file>file:/C:/Users/Manuel/Documents/TFG/NODE%20FW.X/CWSN%20LSI%20Node/Include/NodeHAL.h</file>
             <file>file:/C:/Users/Manuel/Documents/TFG/CRModule/Repository/Repository.c</file>
             <file>file:/C:/Users/Manuel/Documents/TFG/NODE%20FW.X/Aplicacion.h</file>
             <file>file:/C:/Users/Manuel/Documents/TFG/NODE%20FW.X/CWSN%20LSI%20Node/WirelessProtocols/P2P/P2P.c</file>
+            <file>file:/C:/Users/Manuel/Documents/TFG/NODE%20FW.X/CWSN%20LSI%20Node/NodeHAL.c</file>
             <file>file:/C:/Users/Manuel/Documents/TFG/NODE%20FW.X/MainAppCode_NodeTest.c</file>
             <file>file:/C:/Users/Manuel/Documents/TFG/CRModule/Messenger/Messenger.c</file>
             <file>file:/C:/Users/Manuel/Documents/TFG/CRModule/Optimizer/Optimizer.c</file>

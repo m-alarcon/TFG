@@ -39,8 +39,8 @@
 //------------- CONFIGURATION FOR LSI-CWSN NodeTest APP. CODE ----------------//
 //----------------------------------------------------------------------------//
 //Select only one of these...
-//#define NODE_1      //TX role in App. code - node 1. Sets EUI_testA address.
-#define NODE_2      //RX role in App. code - node 2. Sets EUI_testB address.
+#define NODE_1      //TX role in App. code - node 1. Sets EUI_testA address.
+//#define NODE_2      //RX role in App. code - node 2. Sets EUI_testB address.
 //#define NODE_3
 //#define NODE_NOP    //Dummy role - It only joins the network at the beginning
                     //and does stacks maintenance tasks. Sets EUI_testC address.
